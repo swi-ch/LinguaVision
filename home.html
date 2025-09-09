@@ -1,0 +1,600 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工作台 - LinguaVision</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .card-hover {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        .input-focus {
+            transition: all 0.3s ease;
+        }
+        .input-focus:focus {
+            transform: scale(1.02);
+            box-shadow: 0 8px 32px rgba(99, 102, 241, 0.15);
+        }
+        .scene-preview {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+            border: 2px dashed #cbd5e1;
+        }
+        .generating {
+            animation: pulse 2s infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        /* 模型选择器样式 */
+        .model-option.active {
+            background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+            border: 1px solid #d1d5db;
+        }
+        
+        .model-option.active .model-check {
+            opacity: 1 !important;
+        }
+        
+        .model-option:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        
+        #model-dropdown {
+            backdrop-filter: blur(10px);
+            animation: dropdownSlide 0.2s ease-out;
+        }
+        
+        @keyframes dropdownSlide {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto p-6 space-y-8">
+        
+        <!-- 欢迎横幅 -->
+        <div class="gradient-bg rounded-2xl p-8 text-white">
+            <div class="flex items-center justify-between">
+                <div>
+                    <h1 class="text-3xl font-bold mb-2">欢迎回来！</h1>
+                    <p class="text-lg opacity-90">用自然语言描述，AI为您生成专业的三维动态场景</p>
+                    <div class="flex items-center space-x-6 mt-4 text-sm">
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-check-circle"></i>
+                            <span>已生成场景: 23</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-download"></i>
+                            <span>成功导出: 18</span>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <i class="fas fa-clock"></i>
+                            <span>平均用时: 28秒</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <img src="https://images.unsplash.com/photo-1620712943543-bcc4688e7485?w=200&h=150&fit=crop&auto=format" 
+                         alt="3D场景" class="rounded-xl opacity-80">
+                </div>
+            </div>
+        </div>
+
+        <!-- 主要操作区域 -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            
+            <!-- 场景生成器 -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-6">
+                        <h2 class="text-xl font-semibold text-gray-900">
+                            <i class="fas fa-magic text-indigo-500 mr-2"></i>
+                            场景生成器
+                        </h2>
+                        <div class="flex items-center space-x-4">
+                            <!-- AI模型选择器 -->
+                            <div class="relative">
+                                <button id="model-selector" onclick="toggleModelDropdown()" class="flex items-center space-x-2 px-3 py-2 bg-gray-50 hover:bg-gray-100 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                                    <div class="flex items-center space-x-2">
+                                        <div class="w-2 h-2 bg-blue-500 rounded-full"></div>
+                                        <span id="current-model">ERNIE-4.5-21B-A3B</span>
+                                    </div>
+                                    <i class="fas fa-chevron-down text-xs text-gray-400"></i>
+                                </button>
+                                
+                                <!-- 下拉菜单 -->
+                                <div id="model-dropdown" class="hidden absolute right-0 top-full mt-2 w-72 bg-white border border-gray-200 rounded-lg shadow-lg z-50">
+                                    <div class="p-2">
+                                        <div class="text-xs font-medium text-gray-500 px-2 py-1 mb-2">选择AI模型</div>
+                                        
+                                        <!-- ERNIE模型 -->
+                                        <button onclick="selectModel('ERNIE-4.5-21B-A3B', 'blue')" class="model-option active w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 text-left group">
+                                            <div class="flex items-center space-x-3">
+                                                <div class="w-3 h-3 bg-blue-500 rounded-full"></div>
+                                                <div>
+                                                    <div class="font-medium text-gray-900">ERNIE-4.5-21B-A3B</div>
+                                                    <div class="text-xs text-gray-500">场景生成专用微调版 · 高性价比</div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs bg-gradient-to-r from-blue-100 to-purple-100 text-blue-700 px-2 py-1 rounded-full flex items-center space-x-1">
+                                                    <i class="fas fa-cogs text-xs"></i>
+                                                    <span>微调</span>
+                                                </span>
+                                                <i class="fas fa-check text-blue-500 opacity-0 group-hover:opacity-100 model-check"></i>
+                                            </div>
+                                        </button>
+                                        
+                                        <!-- GPT-4.1模型 -->
+                                        <button onclick="selectModel('GPT-4.1', 'green')" class="model-option w-full flex items-center justify-between p-3 rounded-lg hover:bg-gray-50 text-left group">
+                                            <div class="flex items-center space-x-3">
+                                                <div class="w-3 h-3 bg-green-500 rounded-full"></div>
+                                                <div>
+                                                    <div class="font-medium text-gray-900">GPT-4.1</div>
+                                                    <div class="text-xs text-gray-500">全能模型 · 高精度生成</div>
+                                                </div>
+                                            </div>
+                                            <div class="flex items-center space-x-2">
+                                                <span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">精品</span>
+                                                <i class="fas fa-check text-green-500 opacity-0 group-hover:opacity-100 model-check"></i>
+                                            </div>
+                                        </button>
+                                    </div>
+                                    
+                                    <!-- 模型信息 -->
+                                    <div class="border-t border-gray-100 p-3 bg-gray-50 rounded-b-lg">
+                                        <div class="flex items-center space-x-2 text-xs text-gray-600">
+                                            <i class="fas fa-info-circle"></i>
+                                            <span id="model-info">基于海量场景数据微调优化，专为三维场景生成任务设计</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                        <div class="flex items-center space-x-2 text-sm text-gray-500">
+                            <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                            <span>专用微调模型已就绪</span>
+                        </div>
+                        </div>
+                    </div>
+
+                    <!-- 输入区域 -->
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">场景描述</label>
+                            <textarea 
+                                id="scene-input"
+                                class="input-focus w-full h-32 p-4 border border-gray-300 rounded-lg resize-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent" 
+                                placeholder="请详细描述您想要创建的三维场景...
+
+示例：
+• 一辆红色跑车在雨夜城市街道高速行驶，霓虹灯闪烁
+• 工厂车间里机器人协同组装汽车零件
+• 无人机在高楼间穿梭进行城市配送"></textarea>
+                        </div>
+
+                        <!-- 快速选项 -->
+                        <div class="flex flex-wrap gap-2">
+                            <span class="text-sm text-gray-500 mr-2">快速选择：</span>
+                            <button onclick="insertTemplate('自动驾驶')" class="px-3 py-1 bg-blue-50 text-blue-600 rounded-full text-sm hover:bg-blue-100 transition-colors">
+                                🚗 自动驾驶
+                            </button>
+                            <button onclick="insertTemplate('工业仿真')" class="px-3 py-1 bg-orange-50 text-orange-600 rounded-full text-sm hover:bg-orange-100 transition-colors">
+                                🏭 工业仿真
+                            </button>
+                            <button onclick="insertTemplate('教育培训')" class="px-3 py-1 bg-green-50 text-green-600 rounded-full text-sm hover:bg-green-100 transition-colors">
+                                🎓 教育培训
+                            </button>
+                            <button onclick="insertTemplate('游戏场景')" class="px-3 py-1 bg-purple-50 text-purple-600 rounded-full text-sm hover:bg-purple-100 transition-colors">
+                                🎮 游戏场景
+                            </button>
+                        </div>
+
+                        <!-- 生成按钮 -->
+                        <div class="flex items-center space-x-3">
+                            <button onclick="generateScene()" class="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                                <i class="fas fa-sparkles mr-2"></i>
+                                立即生成场景
+                            </button>
+                            <button class="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-save"></i>
+                            </button>
+                            <button class="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 场景预览 -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">
+                        <i class="fas fa-eye text-indigo-500 mr-2"></i>
+                        实时预览
+                    </h3>
+                    
+                    <div id="scene-preview" class="scene-preview rounded-lg h-64 flex items-center justify-center">
+                        <div class="text-center text-gray-500">
+                            <i class="fas fa-cube text-4xl mb-3 opacity-50"></i>
+                            <p class="text-lg">场景预览将在这里显示</p>
+                            <p class="text-sm">输入描述并点击生成开始创建</p>
+                        </div>
+                    </div>
+
+                    <!-- 生成进度 -->
+                    <div id="generation-progress" class="hidden mt-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-gray-600">生成进度</span>
+                            <span id="progress-text" class="text-sm text-gray-500">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="progress-bar" class="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- 导出选项 -->
+                    <div id="export-options" class="hidden mt-4 p-4 bg-gray-50 rounded-lg">
+                        <h4 class="font-medium text-gray-900 mb-3">选择导出格式：</h4>
+                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                            <button class="p-3 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-center">
+                                <i class="fas fa-file-code text-blue-500 text-xl mb-1"></i>
+                                <div class="text-sm font-medium">UE5 C++</div>
+                            </button>
+                            <button class="p-3 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-center">
+                                <i class="fab fa-unity text-gray-800 text-xl mb-1"></i>
+                                <div class="text-sm font-medium">Unity C#</div>
+                            </button>
+                            <button class="p-3 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-center">
+                                <i class="fas fa-cube text-orange-500 text-xl mb-1"></i>
+                                <div class="text-sm font-medium">Blender</div>
+                            </button>
+                            <button class="p-3 border border-gray-200 rounded-lg hover:border-indigo-500 hover:bg-indigo-50 transition-colors text-center">
+                                <i class="fas fa-file-alt text-green-500 text-xl mb-1"></i>
+                                <div class="text-sm font-medium">JSON</div>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 侧边栏 -->
+            <div class="space-y-6">
+                
+                <!-- 快速统计 -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">今日统计</h3>
+                    <div class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-blue-400 rounded-full"></div>
+                                <span class="text-sm text-gray-600">生成场景</span>
+                            </div>
+                            <span class="font-semibold text-gray-900">5</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-green-400 rounded-full"></div>
+                                <span class="text-sm text-gray-600">成功导出</span>
+                            </div>
+                            <span class="font-semibold text-gray-900">3</span>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <div class="w-3 h-3 bg-purple-400 rounded-full"></div>
+                                <span class="text-sm text-gray-600">平均用时</span>
+                            </div>
+                            <span class="font-semibold text-gray-900">24s</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 最近项目 -->
+                <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">最近项目</h3>
+                        <a href="#" class="text-sm text-indigo-600 hover:text-indigo-700">查看全部</a>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=40&h=40&fit=crop&auto=format" 
+                                 alt="项目缩略图" class="w-10 h-10 rounded-lg object-cover">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate">城市交通仿真</p>
+                                <p class="text-xs text-gray-500">2小时前</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=40&h=40&fit=crop&auto=format" 
+                                 alt="项目缩略图" class="w-10 h-10 rounded-lg object-cover">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate">工厂自动化场景</p>
+                                <p class="text-xs text-gray-500">昨天</p>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 cursor-pointer">
+                            <img src="https://images.unsplash.com/photo-1494232410401-ad00d5433cfa?w=40&h=40&fit=crop&auto=format" 
+                                 alt="项目缩略图" class="w-10 h-10 rounded-lg object-cover">
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-gray-900 truncate">赛车游戏场景</p>
+                                <p class="text-xs text-gray-500">3天前</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 帮助提示 -->
+                <div class="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl p-6 border border-indigo-100">
+                    <div class="flex items-start space-x-3">
+                        <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center flex-shrink-0">
+                            <i class="fas fa-lightbulb text-white text-sm"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-medium text-gray-900 mb-1">💡 生成技巧</h4>
+                            <p class="text-sm text-gray-600 mb-3">描述越详细，生成的场景越精确。包括物体、材质、光照、动作等细节。</p>
+                            <a href="#" class="text-sm text-indigo-600 hover:text-indigo-700 font-medium">查看更多技巧 →</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 当前选中的模型
+        let currentModel = 'ERNIE-4.5-21B-A3B';
+        let currentModelColor = 'blue';
+        
+        // 模型选择器功能
+        function toggleModelDropdown() {
+            const dropdown = document.getElementById('model-dropdown');
+            dropdown.classList.toggle('hidden');
+            
+            // 点击外部关闭下拉菜单
+            if (!dropdown.classList.contains('hidden')) {
+                setTimeout(() => {
+                    document.addEventListener('click', closeDropdownOnClickOutside);
+                }, 100);
+            }
+        }
+        
+        function closeDropdownOnClickOutside(event) {
+            const dropdown = document.getElementById('model-dropdown');
+            const selector = document.getElementById('model-selector');
+            
+            if (!dropdown.contains(event.target) && !selector.contains(event.target)) {
+                dropdown.classList.add('hidden');
+                document.removeEventListener('click', closeDropdownOnClickOutside);
+            }
+        }
+        
+        function selectModel(modelName, color) {
+            currentModel = modelName;
+            currentModelColor = color;
+            
+            // 更新当前模型显示
+            document.getElementById('current-model').textContent = modelName;
+            
+            // 更新模型指示点颜色
+            const colorClasses = {
+                'blue': 'bg-blue-500',
+                'green': 'bg-green-500'
+            };
+            
+            const indicator = document.querySelector('#model-selector .w-2.h-2');
+            indicator.className = `w-2 h-2 rounded-full ${colorClasses[color]}`;
+            
+            // 更新活跃状态
+            document.querySelectorAll('.model-option').forEach(option => {
+                option.classList.remove('active');
+            });
+            event.target.closest('.model-option').classList.add('active');
+            
+            // 更新模型信息
+            const modelInfo = {
+                'ERNIE-4.5-21B-A3B': '基于海量场景数据微调优化，专为三维场景生成任务设计',
+                'GPT-4.1': 'GPT-4.1具有卓越的创意表现，适合复杂精细场景'
+            };
+            document.getElementById('model-info').textContent = modelInfo[modelName];
+            
+            // 关闭下拉菜单
+            document.getElementById('model-dropdown').classList.add('hidden');
+            
+            // 显示切换成功通知
+            showModelSwitchNotification(modelName);
+        }
+        
+        function showModelSwitchNotification(modelName) {
+            const notification = document.createElement('div');
+            notification.innerHTML = `
+                <div style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); animation: slideIn 0.3s ease;">
+                    <i class="fas fa-robot mr-2"></i>
+                    已切换到 ${modelName}
+                </div>
+            `;
+            document.body.appendChild(notification);
+            
+            // 3秒后自动移除通知
+            setTimeout(() => {
+                notification.remove();
+            }, 3000);
+        }
+        
+        // 模板插入功能
+        function insertTemplate(type) {
+            const templates = {
+                '自动驾驶': '一辆白色特斯拉Model S在雨天城市道路上以50km/h行驶，前方红绿灯即将变红，左侧有大货车并行，右侧有电动自行车，需要测试自动紧急制动和变道决策算法。',
+                '工业仿真': '现代化汽车制造车间，包含6台KUKA工业机器人协同作业，传送带系统运输车身部件，3台AGV小车在指定路径运行物料，需要监控生产节拍和设备状态。',
+                '教育培训': '学校门口上下学时段交通安全培训场景，有学生横穿马路，校车停靠上下客，家长接送车辆，交警指挥交通，展示正确的交通行为规范。',
+                '游戏场景': '开放世界赛车游戏中的城市夜景赛道，包含急弯、隧道、跳跃点、加速带，动态天气从晴天转为暴雨，NPC车辆有不同的驾驶风格和AI行为。'
+            };
+            
+            document.getElementById('scene-input').value = templates[type] || '';
+        }
+
+        // 场景生成模拟
+        function generateScene() {
+            const input = document.getElementById('scene-input').value.trim();
+            if (!input) {
+                alert('请先输入场景描述！');
+                return;
+            }
+
+            // 显示进度
+            const preview = document.getElementById('scene-preview');
+            const progress = document.getElementById('generation-progress');
+            const exportOptions = document.getElementById('export-options');
+            
+            preview.innerHTML = `
+                <div class="text-center text-indigo-600 generating">
+                    <i class="fas fa-cog fa-spin text-4xl mb-3"></i>
+                    <p class="text-lg font-medium">AI正在生成场景...</p>
+                    <p class="text-sm opacity-75">使用 ${currentModel} 模型 · 预计20-30秒</p>
+                </div>
+            `;
+            
+            progress.classList.remove('hidden');
+            exportOptions.classList.add('hidden');
+
+            // 模拟进度
+            let progressValue = 0;
+            const progressInterval = setInterval(() => {
+                progressValue += Math.random() * 15;
+                if (progressValue > 100) progressValue = 100;
+                
+                document.getElementById('progress-bar').style.width = progressValue + '%';
+                document.getElementById('progress-text').textContent = Math.round(progressValue) + '%';
+                
+                if (progressValue >= 100) {
+                    clearInterval(progressInterval);
+                    setTimeout(showResult, 500);
+                }
+            }, 200);
+        }
+
+        function showResult() {
+            const preview = document.getElementById('scene-preview');
+            const progress = document.getElementById('generation-progress');
+            const exportOptions = document.getElementById('export-options');
+            
+            preview.innerHTML = `
+                <div class="relative w-full h-full bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg overflow-hidden">
+                    <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&h=300&fit=crop&auto=format" 
+                         alt="生成的3D场景" class="w-full h-full object-cover opacity-90">
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
+                    <div class="absolute bottom-4 left-4 text-white">
+                        <div class="flex items-center space-x-2 mb-1">
+                            <i class="fas fa-check-circle text-green-400"></i>
+                            <span class="text-sm font-medium">生成完成</span>
+                        </div>
+                        <p class="text-xs opacity-75">使用 ${currentModel} · 15个对象，8个动态事件</p>
+                    </div>
+                    <button class="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-sm rounded-lg text-white hover:bg-white/30 transition-colors">
+                        <i class="fas fa-expand"></i>
+                    </button>
+                </div>
+            `;
+            
+            progress.classList.add('hidden');
+            exportOptions.classList.remove('hidden');
+        }
+
+        // 接收来自父页面的模板数据
+        window.addEventListener('message', function(event) {
+            if (event.data.action === 'loadTemplate') {
+                const sceneInput = document.getElementById('scene-input');
+                if (sceneInput) {
+                    // 清空之前的内容
+                    sceneInput.value = '';
+                    
+                    // 添加打字机效果
+                    const templateContent = event.data.templateContent;
+                    let index = 0;
+                    
+                    function typeWriter() {
+                        if (index < templateContent.length) {
+                            sceneInput.value += templateContent.charAt(index);
+                            index++;
+                            setTimeout(typeWriter, 20); // 调整打字速度
+                        } else {
+                            // 打字完成后，添加一个闪烁效果
+                            sceneInput.style.borderColor = '#6366f1';
+                            sceneInput.focus();
+                            
+                            // 显示成功提示
+                            setTimeout(() => {
+                                const notification = document.createElement('div');
+                                notification.innerHTML = `
+                                    <div style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); animation: slideIn 0.3s ease;">
+                                        <i class="fas fa-check-circle mr-2"></i>
+                                        模板已加载完成！
+                                    </div>
+                                `;
+                                document.body.appendChild(notification);
+                                
+                                // 3秒后自动移除通知
+                                setTimeout(() => {
+                                    notification.remove();
+                                }, 3000);
+                            }, 500);
+                        }
+                    }
+                    
+                    typeWriter();
+                }
+            }
+        });
+
+        // 页面加载动画
+        window.addEventListener('load', function() {
+            const cards = document.querySelectorAll('.card-hover');
+            cards.forEach((card, index) => {
+                setTimeout(() => {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    card.style.transition = 'all 0.6s ease';
+                    
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, 100);
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>

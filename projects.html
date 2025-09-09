@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的项目 - LinguaVision</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .project-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .project-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.1);
+        }
+        .filter-active {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto p-6">
+        
+        <!-- 页面头部 -->
+        <div class="flex items-center justify-between mb-8">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-900">我的项目</h1>
+                <p class="text-gray-600 mt-1">管理您的所有3D场景生成项目</p>
+            </div>
+            
+            <div class="flex items-center space-x-3">
+                <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-filter mr-2"></i>
+                    筛选
+                </button>
+                <button class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-sort mr-2"></i>
+                    排序
+                </button>
+                <button class="bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-4 py-2 rounded-lg hover:from-indigo-600 hover:to-purple-700 transition-all">
+                    <i class="fas fa-plus mr-2"></i>
+                    新建项目
+                </button>
+            </div>
+        </div>
+
+        <!-- 搜索和筛选 -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-6">
+            <div class="flex flex-col md:flex-row md:items-center md:justify-between space-y-4 md:space-y-0">
+                
+                <!-- 搜索框 -->
+                <div class="relative flex-1 max-w-md">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                    <input type="text" placeholder="搜索项目..." 
+                           class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                </div>
+
+                <!-- 筛选标签 -->
+                <div class="flex items-center space-x-2 overflow-x-auto">
+                    <span class="text-sm text-gray-500 whitespace-nowrap">筛选：</span>
+                    <button onclick="setFilter('all')" class="filter-btn filter-active px-3 py-1 rounded-full text-sm whitespace-nowrap transition-colors">
+                        全部
+                    </button>
+                    <button onclick="setFilter('automotive')" class="filter-btn px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm hover:bg-gray-200 whitespace-nowrap transition-colors">
+                        🚗 自动驾驶
+                    </button>
+                    <button onclick="setFilter('industrial')" class="filter-btn px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm hover:bg-gray-200 whitespace-nowrap transition-colors">
+                        🏭 工业仿真
+                    </button>
+                    <button onclick="setFilter('education')" class="filter-btn px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm hover:bg-gray-200 whitespace-nowrap transition-colors">
+                        🎓 教育培训
+                    </button>
+                    <button onclick="setFilter('gaming')" class="filter-btn px-3 py-1 bg-gray-100 text-gray-600 rounded-full text-sm hover:bg-gray-200 whitespace-nowrap transition-colors">
+                        🎮 游戏场景
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 项目统计 -->
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white rounded-xl p-6 border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">总项目数</p>
+                        <p class="text-2xl font-bold text-gray-900">23</p>
+                    </div>
+                    <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-folder text-blue-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl p-6 border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">已完成</p>
+                        <p class="text-2xl font-bold text-green-600">18</p>
+                    </div>
+                    <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl p-6 border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">进行中</p>
+                        <p class="text-2xl font-bold text-orange-600">3</p>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-clock text-orange-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl p-6 border border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">已导出</p>
+                        <p class="text-2xl font-bold text-purple-600">15</p>
+                    </div>
+                    <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-download text-purple-600 text-xl"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 项目列表 -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" id="projects-grid">
+            
+            <!-- 项目卡片 1 -->
+            <div class="project-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" data-category="automotive">
+                <div class="relative">
+                    <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=200&fit=crop&auto=format" 
+                         alt="城市交通仿真" class="w-full h-48 object-cover">
+                    <div class="absolute top-3 left-3">
+                        <span class="px-2 py-1 bg-blue-500 text-white text-xs rounded-full">🚗 自动驾驶</span>
+                    </div>
+                    <div class="absolute top-3 right-3">
+                        <button class="p-2 bg-white/80 backdrop-blur-sm rounded-lg hover:bg-white transition-colors">
+                            <i class="fas fa-heart text-gray-600"></i>
+                        </button>
+                    </div>
+                    <div class="absolute bottom-3 right-3">
+                        <span class="px-2 py-1 bg-green-500 text-white text-xs rounded-full">
+                            <i class="fas fa-check mr-1"></i>已完成
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <h3 class="font-semibold text-gray-900 mb-2">城市交通仿真场景</h3>
+                    <p class="text-sm text-gray-600 mb-4">复杂的城市十字路口，包含多车道、红绿灯、行人通道，用于测试自动驾驶算法的决策能力。</p>
+                    
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-calendar mr-1"></i>
+                            2024/1/15
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-cube mr-1"></i>
+                            24 对象
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <button class="flex-1 bg-indigo-500 text-white py-2 px-3 rounded-lg text-sm hover:bg-indigo-600 transition-colors">
+                            <i class="fas fa-eye mr-1"></i>查看
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-share"></i>
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 项目卡片 2 -->
+            <div class="project-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" data-category="industrial">
+                <div class="relative">
+                    <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=200&fit=crop&auto=format" 
+                         alt="工厂自动化" class="w-full h-48 object-cover">
+                    <div class="absolute top-3 left-3">
+                        <span class="px-2 py-1 bg-orange-500 text-white text-xs rounded-full">🏭 工业仿真</span>
+                    </div>
+                    <div class="absolute top-3 right-3">
+                        <button class="p-2 bg-white/80 backdrop-blur-sm rounded-lg hover:bg-white transition-colors">
+                            <i class="fas fa-heart text-red-500"></i>
+                        </button>
+                    </div>
+                    <div class="absolute bottom-3 right-3">
+                        <span class="px-2 py-1 bg-orange-500 text-white text-xs rounded-full">
+                            <i class="fas fa-clock mr-1"></i>进行中
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <h3 class="font-semibold text-gray-900 mb-2">智能工厂数字孪生</h3>
+                    <p class="text-sm text-gray-600 mb-4">完整的汽车制造车间，包含机器人工作站、传送带系统、AGV运输车辆，实现生产流程可视化。</p>
+                    
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-calendar mr-1"></i>
+                            2024/1/14
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-cube mr-1"></i>
+                            31 对象
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between text-sm mb-1">
+                            <span class="text-gray-600">生成进度</span>
+                            <span class="text-gray-600">75%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-orange-500 h-2 rounded-full" style="width: 75%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <button class="flex-1 bg-orange-500 text-white py-2 px-3 rounded-lg text-sm hover:bg-orange-600 transition-colors">
+                            <i class="fas fa-play mr-1"></i>继续
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-pause"></i>
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-share"></i>
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 项目卡片 3 -->
+            <div class="project-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" data-category="gaming">
+                <div class="relative">
+                    <img src="https://images.unsplash.com/photo-1494232410401-ad00d5433cfa?w=400&h=200&fit=crop&auto=format" 
+                         alt="赛车游戏场景" class="w-full h-48 object-cover">
+                    <div class="absolute top-3 left-3">
+                        <span class="px-2 py-1 bg-purple-500 text-white text-xs rounded-full">🎮 游戏场景</span>
+                    </div>
+                    <div class="absolute top-3 right-3">
+                        <button class="p-2 bg-white/80 backdrop-blur-sm rounded-lg hover:bg-white transition-colors">
+                            <i class="fas fa-heart text-gray-600"></i>
+                        </button>
+                    </div>
+                    <div class="absolute bottom-3 right-3">
+                        <span class="px-2 py-1 bg-green-500 text-white text-xs rounded-full">
+                            <i class="fas fa-check mr-1"></i>已完成
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <h3 class="font-semibold text-gray-900 mb-2">夜景赛车游戏赛道</h3>
+                    <p class="text-sm text-gray-600 mb-4">充满挑战的城市夜景赛道，包含急弯、跳跃点、动态天气系统，为赛车游戏提供刺激体验。</p>
+                    
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-calendar mr-1"></i>
+                            2024/1/12
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-cube mr-1"></i>
+                            18 对象
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <button class="flex-1 bg-indigo-500 text-white py-2 px-3 rounded-lg text-sm hover:bg-indigo-600 transition-colors">
+                            <i class="fas fa-eye mr-1"></i>查看
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-share"></i>
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 项目卡片 4 -->
+            <div class="project-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" data-category="education">
+                <div class="relative">
+                    <img src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=400&h=200&fit=crop&auto=format" 
+                         alt="教育培训场景" class="w-full h-48 object-cover">
+                    <div class="absolute top-3 left-3">
+                        <span class="px-2 py-1 bg-green-500 text-white text-xs rounded-full">🎓 教育培训</span>
+                    </div>
+                    <div class="absolute top-3 right-3">
+                        <button class="p-2 bg-white/80 backdrop-blur-sm rounded-lg hover:bg-white transition-colors">
+                            <i class="fas fa-heart text-gray-600"></i>
+                        </button>
+                    </div>
+                    <div class="absolute bottom-3 right-3">
+                        <span class="px-2 py-1 bg-green-500 text-white text-xs rounded-full">
+                            <i class="fas fa-check mr-1"></i>已完成
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <h3 class="font-semibold text-gray-900 mb-2">交通安全教育场景</h3>
+                    <p class="text-sm text-gray-600 mb-4">学校周边交通环境，包含人行横道、校车站点、交通标志，用于儿童交通安全教育。</p>
+                    
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-calendar mr-1"></i>
+                            2024/1/10
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-cube mr-1"></i>
+                            12 对象
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <button class="flex-1 bg-indigo-500 text-white py-2 px-3 rounded-lg text-sm hover:bg-indigo-600 transition-colors">
+                            <i class="fas fa-eye mr-1"></i>查看
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-share"></i>
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 项目卡片 5 -->
+            <div class="project-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" data-category="automotive">
+                <div class="relative">
+                    <img src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?w=400&h=200&fit=crop&auto=format" 
+                         alt="高速公路场景" class="w-full h-48 object-cover">
+                    <div class="absolute top-3 left-3">
+                        <span class="px-2 py-1 bg-blue-500 text-white text-xs rounded-full">🚗 自动驾驶</span>
+                    </div>
+                    <div class="absolute top-3 right-3">
+                        <button class="p-2 bg-white/80 backdrop-blur-sm rounded-lg hover:bg-white transition-colors">
+                            <i class="fas fa-heart text-gray-600"></i>
+                        </button>
+                    </div>
+                    <div class="absolute bottom-3 right-3">
+                        <span class="px-2 py-1 bg-yellow-500 text-white text-xs rounded-full">
+                            <i class="fas fa-clock mr-1"></i>进行中
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <h3 class="font-semibold text-gray-900 mb-2">高速公路并道测试</h3>
+                    <p class="text-sm text-gray-600 mb-4">三车道高速公路场景，包含车流密集区域、施工路段、紧急车道，测试自动并道功能。</p>
+                    
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-calendar mr-1"></i>
+                            2024/1/16
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-cube mr-1"></i>
+                            19 对象
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between text-sm mb-1">
+                            <span class="text-gray-600">生成进度</span>
+                            <span class="text-gray-600">45%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div class="bg-yellow-500 h-2 rounded-full" style="width: 45%"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <button class="flex-1 bg-yellow-500 text-white py-2 px-3 rounded-lg text-sm hover:bg-yellow-600 transition-colors">
+                            <i class="fas fa-play mr-1"></i>继续
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-pause"></i>
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-share"></i>
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 项目卡片 6 -->
+            <div class="project-card bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden" data-category="industrial">
+                <div class="relative">
+                    <img src="https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=200&fit=crop&auto=format" 
+                         alt="仓储物流" class="w-full h-48 object-cover">
+                    <div class="absolute top-3 left-3">
+                        <span class="px-2 py-1 bg-orange-500 text-white text-xs rounded-full">🏭 工业仿真</span>
+                    </div>
+                    <div class="absolute top-3 right-3">
+                        <button class="p-2 bg-white/80 backdrop-blur-sm rounded-lg hover:bg-white transition-colors">
+                            <i class="fas fa-heart text-red-500"></i>
+                        </button>
+                    </div>
+                    <div class="absolute bottom-3 right-3">
+                        <span class="px-2 py-1 bg-green-500 text-white text-xs rounded-full">
+                            <i class="fas fa-check mr-1"></i>已完成
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="p-6">
+                    <h3 class="font-semibold text-gray-900 mb-2">智能仓储物流中心</h3>
+                    <p class="text-sm text-gray-600 mb-4">现代化物流仓库，包含自动化货架、分拣机器人、传送带网络，优化仓储作业流程。</p>
+                    
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-calendar mr-1"></i>
+                            2024/1/8
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            <i class="fas fa-cube mr-1"></i>
+                            28 对象
+                        </div>
+                    </div>
+                    
+                    <div class="flex items-center space-x-2">
+                        <button class="flex-1 bg-indigo-500 text-white py-2 px-3 rounded-lg text-sm hover:bg-indigo-600 transition-colors">
+                            <i class="fas fa-eye mr-1"></i>查看
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-download"></i>
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-share"></i>
+                        </button>
+                        <button class="px-3 py-2 border border-gray-300 text-gray-600 rounded-lg hover:bg-gray-50 transition-colors">
+                            <i class="fas fa-ellipsis-h"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 加载更多 -->
+        <div class="text-center mt-8">
+            <button class="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
+                <i class="fas fa-spinner mr-2"></i>
+                加载更多项目
+            </button>
+        </div>
+    </div>
+
+    <script>
+        // 筛选功能
+        function setFilter(category) {
+            // 更新按钮状态
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('filter-active');
+                btn.classList.add('bg-gray-100', 'text-gray-600');
+            });
+            
+            event.target.classList.add('filter-active');
+            event.target.classList.remove('bg-gray-100', 'text-gray-600');
+            
+            // 筛选项目卡片
+            const cards = document.querySelectorAll('.project-card');
+            cards.forEach(card => {
+                if (category === 'all' || card.dataset.category === category) {
+                    card.style.display = 'block';
+                    setTimeout(() => {
+                        card.style.opacity = '1';
+                        card.style.transform = 'translateY(0)';
+                    }, 100);
+                } else {
+                    card.style.opacity = '0';
+                    card.style.transform = 'translateY(20px)';
+                    setTimeout(() => {
+                        card.style.display = 'none';
+                    }, 300);
+                }
+            });
+        }
+
+        // 搜索功能
+        document.querySelector('input[type="text"]').addEventListener('input', function(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const cards = document.querySelectorAll('.project-card');
+            
+            cards.forEach(card => {
+                const title = card.querySelector('h3').textContent.toLowerCase();
+                const description = card.querySelector('p').textContent.toLowerCase();
+                
+                if (title.includes(searchTerm) || description.includes(searchTerm)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // 页面加载动画
+        window.addEventListener('load', function() {
+            const cards = document.querySelectorAll('.project-card');
+            cards.forEach((card, index) => {
+                card.style.opacity = '0';
+                card.style.transform = 'translateY(20px)';
+                card.style.transition = 'all 0.6s ease';
+                
+                setTimeout(() => {
+                    card.style.opacity = '1';
+                    card.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>
