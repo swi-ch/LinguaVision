@@ -474,63 +474,329 @@
                 return;
             }
 
-            // 显示进度
+            // 显示技术性加载过程
             const preview = document.getElementById('scene-preview');
             const progress = document.getElementById('generation-progress');
             const exportOptions = document.getElementById('export-options');
             
             preview.innerHTML = `
-                <div class="text-center text-indigo-600 generating">
-                    <i class="fas fa-cog fa-spin text-4xl mb-3"></i>
-                    <p class="text-lg font-medium">AI正在生成场景...</p>
-                    <p class="text-sm opacity-75">使用 ${currentModel} 模型 · 预计20-30秒</p>
+                <div class="h-full bg-gray-900 text-white p-6 rounded-lg overflow-hidden relative">
+                    <!-- 背景网格效果 -->
+                    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 20px 20px;"></div>
+                    
+                    <!-- 主标题 -->
+                    <div class="text-center mb-6 relative z-10">
+                        <div class="flex items-center justify-center space-x-3 mb-2">
+                            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-brain text-white text-sm"></i>
+                            </div>
+                            <h3 class="text-xl font-bold">LinguaVision AI Engine</h3>
+                        </div>
+                        <p class="text-gray-400 text-sm">正在处理您的场景描述 · ${currentModel}</p>
+                    </div>
+                    
+                    <!-- 处理步骤 -->
+                    <div class="space-y-4 relative z-10" id="processing-steps">
+                        <!-- 步骤将通过JavaScript动态添加 -->
+                    </div>
+                    
+                    <!-- 底部统计信息 -->
+                    <div class="absolute bottom-4 left-6 right-6 flex justify-between text-xs text-gray-500">
+                        <span>Model: ${currentModel}</span>
+                        <span id="processing-time">00:00</span>
+                        <span>Status: Processing</span>
+                    </div>
                 </div>
             `;
             
-            progress.classList.remove('hidden');
+            progress.classList.add('hidden');
             exportOptions.classList.add('hidden');
 
-            // 模拟进度
-            let progressValue = 0;
-            const progressInterval = setInterval(() => {
-                progressValue += Math.random() * 15;
-                if (progressValue > 100) progressValue = 100;
-                
-                document.getElementById('progress-bar').style.width = progressValue + '%';
-                document.getElementById('progress-text').textContent = Math.round(progressValue) + '%';
-                
-                if (progressValue >= 100) {
-                    clearInterval(progressInterval);
-                    setTimeout(showResult, 500);
-                }
-            }, 200);
+            // 启动技术性处理过程
+            startTechnicalProcessing();
         }
 
-        function showResult() {
+        // 技术性处理过程
+        function startTechnicalProcessing() {
+            const steps = [
+                {
+                    id: 'nlp',
+                    title: 'NLP 语义解析',
+                    description: '正在解析您的自然语言输入...',
+                    details: ['词法分析完成', '句法结构识别', '语义关系提取', '场景要素识别'],
+                    icon: 'fas fa-language',
+                    color: 'from-blue-500 to-cyan-500',
+                    duration: 3000
+                },
+                {
+                    id: 'asset',
+                    title: '资产系统匹配',
+                    description: '正在匹配最合适的3D资产内容...',
+                    details: ['检索资产库', '模型兼容性验证', '纹理质量评估', '物理属性配置'],
+                    icon: 'fas fa-cube',
+                    color: 'from-green-500 to-teal-500',
+                    duration: 4000
+                },
+                {
+                    id: 'spatial',
+                    title: '空间关系解析',
+                    description: '正在处理对象间的空间关系...',
+                    details: ['构建空间拓扑图', '计算相对位置', '碰撞检测设置', '约束关系建立'],
+                    icon: 'fas fa-project-diagram',
+                    color: 'from-purple-500 to-pink-500',
+                    duration: 3500
+                },
+                {
+                    id: 'timeline',
+                    title: '时间轴构建',
+                    description: '正在生成动态事件序列...',
+                    details: ['主动事件识别', '被动事件推导', '时序依赖分析', '物理参数计算'],
+                    icon: 'fas fa-clock',
+                    color: 'from-orange-500 to-red-500',
+                    duration: 2500
+                },
+                {
+                    id: 'compile',
+                    title: '代码编译生成',
+                    description: '正在输出UE5标准代码...',
+                    details: ['生成头文件(.h)', '编译源代码(.cpp)', '蓝图接口创建', '资产引用配置'],
+                    icon: 'fas fa-code',
+                    color: 'from-indigo-500 to-purple-500',
+                    duration: 3000
+                }
+            ];
+
+            let currentStepIndex = 0;
+            let startTime = Date.now();
+
+            // 更新处理时间
+            const timeInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - startTime) / 1000);
+                const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+                const seconds = (elapsed % 60).toString().padStart(2, '0');
+                const timeElement = document.getElementById('processing-time');
+                if (timeElement) {
+                    timeElement.textContent = `${minutes}:${seconds}`;
+                }
+            }, 1000);
+
+            function processNextStep() {
+                if (currentStepIndex >= steps.length) {
+                    clearInterval(timeInterval);
+                    setTimeout(showTechnicalResult, 1000);
+                    return;
+                }
+
+                const step = steps[currentStepIndex];
+                addProcessingStep(step, currentStepIndex);
+                
+                setTimeout(() => {
+                    completeStep(step.id);
+                    currentStepIndex++;
+                    setTimeout(processNextStep, 500);
+                }, step.duration);
+            }
+
+            processNextStep();
+        }
+
+        function addProcessingStep(step, index) {
+            const stepsContainer = document.getElementById('processing-steps');
+            const stepElement = document.createElement('div');
+            stepElement.id = `step-${step.id}`;
+            stepElement.className = 'opacity-0 transform translate-y-4';
+            
+            stepElement.innerHTML = `
+                <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
+                    <div class="flex items-center space-x-3 mb-3">
+                        <div class="w-10 h-10 bg-gradient-to-r ${step.color} rounded-lg flex items-center justify-center">
+                            <i class="${step.icon} text-white"></i>
+                        </div>
+                        <div class="flex-1">
+                            <h4 class="font-semibold text-white">${step.title}</h4>
+                            <p class="text-gray-400 text-sm">${step.description}</p>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <div class="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" id="spinner-${step.id}"></div>
+                            <i class="fas fa-check-circle text-green-500 hidden" id="check-${step.id}"></i>
+                        </div>
+                    </div>
+                    
+                    <!-- 技术细节 -->
+                    <div class="space-y-1" id="details-${step.id}">
+                        ${step.details.map((detail, i) => `
+                            <div class="text-xs text-gray-500 flex items-center space-x-2 opacity-0" id="detail-${step.id}-${i}">
+                                <div class="w-1 h-1 bg-gray-600 rounded-full"></div>
+                                <span>${detail}</span>
+                                <i class="fas fa-check text-green-500 text-xs ml-auto hidden" id="detail-check-${step.id}-${i}"></i>
+                            </div>
+                        `).join('')}
+                    </div>
+                    
+                    <!-- 进度条 -->
+                    <div class="mt-3 bg-gray-700 rounded-full h-1">
+                        <div class="bg-gradient-to-r ${step.color} h-1 rounded-full transition-all duration-300" 
+                             style="width: 0%" id="progress-${step.id}"></div>
+                    </div>
+                </div>
+            `;
+            
+            stepsContainer.appendChild(stepElement);
+            
+            // 添加进入动画
+            setTimeout(() => {
+                stepElement.style.opacity = '1';
+                stepElement.style.transform = 'translateY(0)';
+                stepElement.style.transition = 'all 0.5s ease';
+                
+                // 开始显示技术细节
+                animateStepDetails(step);
+            }, 100);
+        }
+
+        function animateStepDetails(step) {
+            let detailIndex = 0;
+            const showDetailInterval = setInterval(() => {
+                const detailElement = document.getElementById(`detail-${step.id}-${detailIndex}`);
+                if (detailElement) {
+                    detailElement.style.opacity = '1';
+                    detailElement.style.transition = 'opacity 0.3s ease';
+                    
+                    // 2秒后显示完成标记
+                    setTimeout(() => {
+                        const checkElement = document.getElementById(`detail-check-${step.id}-${detailIndex}`);
+                        if (checkElement) {
+                            checkElement.classList.remove('hidden');
+                        }
+                    }, 2000);
+                }
+                
+                detailIndex++;
+                if (detailIndex >= step.details.length) {
+                    clearInterval(showDetailInterval);
+                }
+                
+                // 更新进度条
+                const progress = (detailIndex / step.details.length) * 100;
+                const progressBar = document.getElementById(`progress-${step.id}`);
+                if (progressBar) {
+                    progressBar.style.width = `${progress}%`;
+                }
+            }, 600);
+        }
+
+        function completeStep(stepId) {
+            const spinner = document.getElementById(`spinner-${stepId}`);
+            const check = document.getElementById(`check-${stepId}`);
+            const progressBar = document.getElementById(`progress-${stepId}`);
+            
+            if (spinner) spinner.style.display = 'none';
+            if (check) check.classList.remove('hidden');
+            if (progressBar) progressBar.style.width = '100%';
+        }
+
+        function showTechnicalResult() {
             const preview = document.getElementById('scene-preview');
             const progress = document.getElementById('generation-progress');
             const exportOptions = document.getElementById('export-options');
             
             preview.innerHTML = `
-                <div class="relative w-full h-full bg-gradient-to-br from-blue-50 to-purple-50 rounded-lg overflow-hidden">
-                    <img src="https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600&h=300&fit=crop&auto=format" 
-                         alt="生成的3D场景" class="w-full h-full object-cover opacity-90">
-                    <div class="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent"></div>
-                    <div class="absolute bottom-4 left-4 text-white">
-                        <div class="flex items-center space-x-2 mb-1">
-                            <i class="fas fa-check-circle text-green-400"></i>
-                            <span class="text-sm font-medium">生成完成</span>
+                <div class="h-full bg-gray-900 text-white p-6 rounded-lg overflow-hidden">
+                    <!-- 成功标题 -->
+                    <div class="text-center mb-6">
+                        <div class="flex items-center justify-center space-x-3 mb-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                                <i class="fas fa-check text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold text-green-400">场景生成完成</h3>
+                                <p class="text-gray-400 text-sm">所有系统处理成功</p>
+                            </div>
                         </div>
-                        <p class="text-xs opacity-75">使用 ${currentModel} · 15个对象，8个动态事件</p>
                     </div>
-                    <button class="absolute top-4 right-4 p-2 bg-white/20 backdrop-blur-sm rounded-lg text-white hover:bg-white/30 transition-colors">
-                        <i class="fas fa-expand"></i>
-                    </button>
+                    
+                    <!-- 生成结果统计 -->
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
+                            <div class="text-lg font-bold text-blue-400">23</div>
+                            <div class="text-xs text-gray-500">3D对象</div>
+                        </div>
+                        <div class="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
+                            <div class="text-lg font-bold text-green-400">12</div>
+                            <div class="text-xs text-gray-500">动态事件</div>
+                        </div>
+                        <div class="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
+                            <div class="text-lg font-bold text-purple-400">8</div>
+                            <div class="text-xs text-gray-500">时间轴</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 生成的文件 -->
+                    <div class="space-y-3">
+                        <h4 class="text-sm font-semibold text-gray-300 mb-3">
+                            <i class="fas fa-file-code mr-2"></i>
+                            生成的UE5代码文件
+                        </h4>
+                        
+                        <!-- Header文件 -->
+                        <div class="bg-gray-800 rounded-lg border border-gray-700 p-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-file-code text-blue-400"></i>
+                                    <span class="font-mono text-sm text-gray-300">SceneGenerator.h</span>
+                                    <span class="px-2 py-1 bg-blue-900 text-blue-200 text-xs rounded">头文件</span>
+                                </div>
+                                <span class="text-xs text-gray-500">2.4 KB</span>
+                            </div>
+                            <p class="text-xs text-gray-500">包含类定义、函数声明和对象属性定义</p>
+                        </div>
+                        
+                        <!-- CPP文件 -->
+                        <div class="bg-gray-800 rounded-lg border border-gray-700 p-3">
+                            <div class="flex items-center justify-between mb-2">
+                                <div class="flex items-center space-x-2">
+                                    <i class="fas fa-file-code text-green-400"></i>
+                                    <span class="font-mono text-sm text-gray-300">SceneGenerator.cpp</span>
+                                    <span class="px-2 py-1 bg-green-900 text-green-200 text-xs rounded">源代码</span>
+                                </div>
+                                <span class="text-xs text-gray-500">15.7 KB</span>
+                            </div>
+                            <p class="text-xs text-gray-500">包含完整的场景逻辑、物理计算和事件处理</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 使用说明 -->
+                    <div class="mt-4 bg-yellow-900/30 border border-yellow-700 rounded-lg p-3">
+                        <div class="flex items-start space-x-2">
+                            <i class="fas fa-info-circle text-yellow-400 mt-1"></i>
+                            <div class="text-xs">
+                                <p class="text-yellow-200 font-medium mb-1">使用说明</p>
+                                <p class="text-yellow-300/80">请将生成的 .h 和 .cpp 文件导入您的UE5项目中。由于系统限制，暂不支持实时预览，需要在UE5编辑器中编译和运行场景。</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 底部操作按钮 -->
+                    <div class="flex space-x-2 mt-4">
+                        <button class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-blue-800 transition-all">
+                            <i class="fas fa-download mr-2"></i>
+                            下载文件
+                        </button>
+                        <button class="flex-1 bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition-all">
+                            <i class="fas fa-eye mr-2"></i>
+                            预览代码
+                        </button>
+                    </div>
                 </div>
             `;
             
             progress.classList.add('hidden');
             exportOptions.classList.remove('hidden');
+        }
+
+        // 为了向后兼容，保留原函数名
+        function showResult() {
+            showTechnicalResult();
         }
 
         // 接收来自父页面的模板数据
