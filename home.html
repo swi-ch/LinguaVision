@@ -743,7 +743,7 @@
             const preview = document.getElementById('scene-preview');
             
             preview.innerHTML = `
-                <div class="h-full bg-gray-900 text-white p-6 rounded-lg overflow-hidden relative" style="min-height: 400px; max-height: 500px;">
+                <div class="h-full bg-gray-900 text-white p-6 rounded-lg overflow-hidden relative flex flex-col" style="min-height: 400px; max-height: 500px;">
                     <!-- 成功标题 -->
                     <div class="text-center mb-4">
                         <div class="flex items-center justify-center space-x-3 mb-3">
@@ -757,69 +757,72 @@
                         </div>
                     </div>
                     
-                    <!-- 生成结果统计 -->
-                    <div class="grid grid-cols-3 gap-4 mb-6">
-                        <div class="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
-                            <div class="text-lg font-bold text-blue-400">23</div>
-                            <div class="text-xs text-gray-500">3D对象</div>
-                        </div>
-                        <div class="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
-                            <div class="text-lg font-bold text-green-400">12</div>
-                            <div class="text-xs text-gray-500">动态事件</div>
-                        </div>
-                        <div class="bg-gray-800 rounded-lg p-3 text-center border border-gray-700">
-                            <div class="text-lg font-bold text-purple-400">8</div>
-                            <div class="text-xs text-gray-500">时间轴</div>
-                        </div>
-                    </div>
-                    
-                    <!-- 生成的文件 -->
-                    <div class="space-y-3">
-                        <h4 class="text-sm font-semibold text-gray-300 mb-3">
-                            <i class="fas fa-file-code mr-2"></i>
-                            生成的UE5代码文件
-                        </h4>
-                        
-                        <!-- Header文件 -->
-                        <div class="bg-gray-800 rounded-lg border border-gray-700 p-3">
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="flex items-center space-x-2">
-                                    <i class="fas fa-file-code text-blue-400"></i>
-                                    <span class="font-mono text-sm text-gray-300">SceneGenerator.h</span>
-                                    <span class="px-2 py-1 bg-blue-900 text-blue-200 text-xs rounded">头文件</span>
-                                </div>
-                                <span class="text-xs text-gray-500">2.4 KB</span>
+                    <!-- 可滚动内容区域 -->
+                    <div class="flex-1 overflow-y-auto pr-2" style="max-height: 280px;">
+                        <!-- 生成结果统计 -->
+                        <div class="grid grid-cols-3 gap-3 mb-4">
+                            <div class="bg-gray-800 rounded-lg p-2.5 text-center border border-gray-700">
+                                <div class="text-lg font-bold text-blue-400">23</div>
+                                <div class="text-xs text-gray-500">3D对象</div>
                             </div>
-                            <p class="text-xs text-gray-500">包含类定义、函数声明和对象属性定义</p>
+                            <div class="bg-gray-800 rounded-lg p-2.5 text-center border border-gray-700">
+                                <div class="text-lg font-bold text-green-400">12</div>
+                                <div class="text-xs text-gray-500">动态事件</div>
+                            </div>
+                            <div class="bg-gray-800 rounded-lg p-2.5 text-center border border-gray-700">
+                                <div class="text-lg font-bold text-purple-400">8</div>
+                                <div class="text-xs text-gray-500">时间轴</div>
+                            </div>
                         </div>
                         
-                        <!-- CPP文件 -->
-                        <div class="bg-gray-800 rounded-lg border border-gray-700 p-3">
-                            <div class="flex items-center justify-between mb-2">
-                                <div class="flex items-center space-x-2">
-                                    <i class="fas fa-file-code text-green-400"></i>
-                                    <span class="font-mono text-sm text-gray-300">SceneGenerator.cpp</span>
-                                    <span class="px-2 py-1 bg-green-900 text-green-200 text-xs rounded">源代码</span>
+                        <!-- 生成的文件 -->
+                        <div class="space-y-3 mb-4">
+                            <h4 class="text-sm font-semibold text-gray-300 mb-2">
+                                <i class="fas fa-file-code mr-2"></i>
+                                生成的UE5代码文件
+                            </h4>
+                            
+                            <!-- Header文件 -->
+                            <div class="bg-gray-800 rounded-lg border border-gray-700 p-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <div class="flex items-center space-x-2">
+                                        <i class="fas fa-file-code text-blue-400"></i>
+                                        <span class="font-mono text-sm text-gray-300">SceneGenerator.h</span>
+                                        <span class="px-2 py-1 bg-blue-900 text-blue-200 text-xs rounded">头文件</span>
+                                    </div>
+                                    <span class="text-xs text-gray-500">2.4 KB</span>
                                 </div>
-                                <span class="text-xs text-gray-500">15.7 KB</span>
+                                <p class="text-xs text-gray-500">包含类定义、函数声明和对象属性定义</p>
                             </div>
-                            <p class="text-xs text-gray-500">包含完整的场景逻辑、物理计算和事件处理</p>
+                            
+                            <!-- CPP文件 -->
+                            <div class="bg-gray-800 rounded-lg border border-gray-700 p-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <div class="flex items-center space-x-2">
+                                        <i class="fas fa-file-code text-green-400"></i>
+                                        <span class="font-mono text-sm text-gray-300">SceneGenerator.cpp</span>
+                                        <span class="px-2 py-1 bg-green-900 text-green-200 text-xs rounded">源代码</span>
+                                    </div>
+                                    <span class="text-xs text-gray-500">15.7 KB</span>
+                                </div>
+                                <p class="text-xs text-gray-500">包含完整的场景逻辑、物理计算和事件处理</p>
+                            </div>
+                        </div>
+                        
+                        <!-- 使用说明 -->
+                        <div class="bg-yellow-900/30 border border-yellow-700 rounded-lg p-3 mb-4">
+                            <div class="flex items-start space-x-2">
+                                <i class="fas fa-info-circle text-yellow-400 mt-0.5 flex-shrink-0"></i>
+                                <div class="text-xs">
+                                    <p class="text-yellow-200 font-medium mb-1">使用说明</p>
+                                    <p class="text-yellow-300/80">请将生成的 .h 和 .cpp 文件导入您的UE5项目中。由于系统限制，暂不支持实时预览，需要在UE5编辑器中编译和运行场景。</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     
-                    <!-- 使用说明 -->
-                    <div class="mt-4 bg-yellow-900/30 border border-yellow-700 rounded-lg p-3">
-                        <div class="flex items-start space-x-2">
-                            <i class="fas fa-info-circle text-yellow-400 mt-1"></i>
-                            <div class="text-xs">
-                                <p class="text-yellow-200 font-medium mb-1">使用说明</p>
-                                <p class="text-yellow-300/80">请将生成的 .h 和 .cpp 文件导入您的UE5项目中。由于系统限制，暂不支持实时预览，需要在UE5编辑器中编译和运行场景。</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 底部操作按钮 -->
-                    <div class="absolute bottom-6 left-6 right-6">
+                    <!-- 固定底部操作按钮 -->
+                    <div class="border-t border-gray-700 pt-4 mt-4">
                         <div class="flex space-x-3">
                             <button class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg">
                                 <i class="fas fa-download mr-2"></i>
