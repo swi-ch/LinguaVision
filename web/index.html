@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinguaVision - 一句话，一视界</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .sidebar-item {
+            transition: all 0.2s ease;
+        }
+        .sidebar-item:hover {
+            transform: translateX(4px);
+        }
+        .sidebar-item.active {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            color: white;
+        }
+        .content-iframe {
+            border: none;
+            width: 100%;
+            height: 100%;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        .logo-gradient {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .nav-animation {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 h-screen overflow-hidden">
+    <!-- 主布局容器 -->
+    <div class="flex h-full">
+        <!-- 侧边栏 -->
+        <div class="w-64 bg-white shadow-lg flex flex-col">
+            <!-- Logo区域 -->
+            <div class="p-6 border-b border-gray-100">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-xl flex items-center justify-center">
+                        <i class="fas fa-cube text-white text-lg"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-bold logo-gradient">LinguaVision</h1>
+                        <p class="text-xs text-gray-500">一句话，一视界</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 导航菜单 -->
+            <nav class="flex-1 p-4 space-y-2">
+                <a href="#" onclick="loadPage('home')" class="sidebar-item active flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50" id="nav-home">
+                    <i class="fas fa-home w-5 text-center"></i>
+                    <span>工作台</span>
+                </a>
+                
+                <a href="#" onclick="loadPage('projects')" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50" id="nav-projects">
+                    <i class="fas fa-folder w-5 text-center"></i>
+                    <span>我的项目</span>
+                </a>
+                
+                <a href="#" onclick="loadPage('templates')" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50" id="nav-templates">
+                    <i class="fas fa-layer-group w-5 text-center"></i>
+                    <span>场景模板</span>
+                </a>
+                
+                <a href="#" onclick="loadPage('gallery')" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50" id="nav-gallery">
+                    <i class="fas fa-images w-5 text-center"></i>
+                    <span>作品展示</span>
+                </a>
+
+                <div class="pt-4 border-t border-gray-100 mt-4">
+                    <a href="#" onclick="loadPage('help')" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50" id="nav-help">
+                        <i class="fas fa-question-circle w-5 text-center"></i>
+                        <span>帮助中心</span>
+                    </a>
+                    
+                    <a href="#" onclick="loadPage('profile')" class="sidebar-item flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-50" id="nav-profile">
+                        <i class="fas fa-user-circle w-5 text-center"></i>
+                        <span>个人设置</span>
+                    </a>
+                </div>
+            </nav>
+
+            <!-- 底部用户信息 -->
+            <div class="p-4 border-t border-gray-100">
+                <div class="flex items-center space-x-3">
+                    <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=40&h=40&fit=crop&crop=face&auto=format" 
+                         alt="用户头像" class="w-10 h-10 rounded-full">
+                    <div class="flex-1 min-w-0">
+                        <p class="text-sm font-medium text-gray-900 truncate">鑫奇队</p>
+                        <p class="text-xs text-gray-500">专业版</p>
+                    </div>
+                    <button class="text-gray-400 hover:text-gray-600">
+                        <i class="fas fa-cog"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 主内容区域 -->
+        <div class="flex-1 flex flex-col h-full">
+            <!-- 顶部状态栏 -->
+            <div class="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+                <div class="flex items-center space-x-4">
+                    <h2 id="page-title" class="text-lg font-semibold text-gray-900">工作台</h2>
+                    <div class="flex items-center space-x-2 text-sm text-gray-500">
+                        <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                        <span>AI服务已连接</span>
+                    </div>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+                        <i class="fas fa-bell"></i>
+                    </button>
+                    <button class="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+                        <i class="fas fa-search"></i>
+                    </button>
+                    <div class="flex items-center space-x-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white px-3 py-2 rounded-lg text-sm">
+                        <i class="fas fa-sparkles"></i>
+                        <span>升级Pro</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 内容容器 -->
+            <div class="flex-1 p-6 overflow-hidden">
+                <iframe id="content-frame" class="content-iframe" src="home.html"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 页面导航功能
+        function loadPage(page) {
+            // 更新内容iframe
+            document.getElementById('content-frame').src = page + '.html';
+            
+            // 更新页面标题
+            const titles = {
+                'home': '工作台',
+                'projects': '我的项目',
+                'templates': '场景模板',
+                'gallery': '作品展示',
+                'help': '帮助中心',
+                'profile': '个人设置'
+            };
+            document.getElementById('page-title').textContent = titles[page] || '工作台';
+            
+            // 更新导航状态
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.classList.remove('active');
+            });
+            document.getElementById('nav-' + page).classList.add('active');
+        }
+
+        // 键盘快捷键
+        document.addEventListener('keydown', function(e) {
+            if (e.ctrlKey || e.metaKey) {
+                switch(e.key) {
+                    case '1':
+                        e.preventDefault();
+                        loadPage('home');
+                        break;
+                    case '2':
+                        e.preventDefault();
+                        loadPage('projects');
+                        break;
+                    case '3':
+                        e.preventDefault();
+                        loadPage('templates');
+                        break;
+                }
+            }
+        });
+
+        // 接收来自子页面的消息
+        window.addEventListener('message', function(event) {
+            if (event.data.action === 'useTemplate') {
+                // 切换到工作台页面
+                loadPage('home');
+                
+                // 等待工作台页面加载完成后，发送模板数据
+                setTimeout(() => {
+                    const homeFrame = document.getElementById('content-frame');
+                    if (homeFrame && homeFrame.contentWindow) {
+                        homeFrame.contentWindow.postMessage({
+                            action: 'loadTemplate',
+                            templateId: event.data.templateId,
+                            templateContent: event.data.templateContent
+                        }, '*');
+                    }
+                }, 500);
+            }
+        });
+
+        // 页面加载动画
+        window.addEventListener('load', function() {
+            document.querySelector('.sidebar-item.active').style.transform = 'translateX(4px)';
+        });
+    </script>
+</body>
+</html>

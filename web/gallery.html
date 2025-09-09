@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>作品展示 - LinguaVision</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .gallery-item {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .gallery-item:hover {
+            transform: scale(1.02);
+        }
+        .masonry-grid {
+            column-count: 3;
+            column-gap: 1.5rem;
+        }
+        @media (max-width: 1024px) {
+            .masonry-grid {
+                column-count: 2;
+            }
+        }
+        @media (max-width: 640px) {
+            .masonry-grid {
+                column-count: 1;
+            }
+        }
+        .masonry-item {
+            break-inside: avoid;
+            margin-bottom: 1.5rem;
+        }
+        .modal {
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+        .modal.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+        .modal.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <div class="max-w-7xl mx-auto p-6">
+        
+        <!-- 页面头部 -->
+        <div class="text-center mb-8">
+            <h1 class="text-3xl font-bold gradient-text mb-4">精彩作品展示</h1>
+            <p class="text-lg text-gray-600 max-w-2xl mx-auto">
+                探索由LinguaVision生成的精彩3D场景，感受AI技术的无限创造力
+            </p>
+        </div>
+
+        <!-- 筛选和排序 -->
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between mb-8 space-y-4 md:space-y-0">
+            <!-- 筛选标签 -->
+            <div class="flex flex-wrap gap-2">
+                <button onclick="filterGallery('all')" class="filter-btn active px-4 py-2 bg-indigo-500 text-white rounded-full text-sm font-medium transition-colors">
+                    全部作品
+                </button>
+                <button onclick="filterGallery('featured')" class="filter-btn px-4 py-2 bg-white text-gray-600 rounded-full text-sm hover:bg-gray-100 transition-colors">
+                    精选推荐
+                </button>
+                <button onclick="filterGallery('automotive')" class="filter-btn px-4 py-2 bg-white text-gray-600 rounded-full text-sm hover:bg-gray-100 transition-colors">
+                    🚗 自动驾驶
+                </button>
+                <button onclick="filterGallery('industrial')" class="filter-btn px-4 py-2 bg-white text-gray-600 rounded-full text-sm hover:bg-gray-100 transition-colors">
+                    🏭 工业仿真
+                </button>
+                <button onclick="filterGallery('gaming')" class="filter-btn px-4 py-2 bg-white text-gray-600 rounded-full text-sm hover:bg-gray-100 transition-colors">
+                    🎮 游戏场景
+                </button>
+            </div>
+
+            <!-- 排序选项 -->
+            <div class="flex items-center space-x-3">
+                <select class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+                    <option>最新发布</option>
+                    <option>最受欢迎</option>
+                    <option>下载最多</option>
+                    <option>评分最高</option>
+                </select>
+                <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-th-large"></i>
+                </button>
+                <button class="p-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-list"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- 瀑布流展示 -->
+        <div class="masonry-grid" id="gallery-grid">
+            
+            <!-- 作品项目 1 -->
+            <div class="masonry-item gallery-item" data-category="automotive featured">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer" onclick="openModal('work1')">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400&h=300&fit=crop&auto=format" 
+                             alt="城市交通仿真" class="w-full object-cover">
+                        <div class="absolute top-3 left-3">
+                            <span class="px-2 py-1 bg-blue-500 text-white text-xs rounded-full">🚗 自动驾驶</span>
+                        </div>
+                        <div class="absolute top-3 right-3">
+                            <span class="px-2 py-1 bg-yellow-500 text-white text-xs rounded-full">
+                                <i class="fas fa-star mr-1"></i>精选
+                            </span>
+                        </div>
+                        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                            <div class="opacity-0 hover:opacity-100 transition-opacity">
+                                <i class="fas fa-play-circle text-white text-4xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4">
+                        <h3 class="font-semibold text-gray-900 mb-2">复杂城市交通仿真</h3>
+                        <p class="text-sm text-gray-600 mb-3">真实还原城市十字路口场景，包含智能红绿灯、行人通道、公交专用道等复杂交通要素。</p>
+                        
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3 text-xs text-gray-500">
+                                <span><i class="fas fa-eye mr-1"></i>2.3k</span>
+                                <span><i class="fas fa-heart mr-1"></i>456</span>
+                                <span><i class="fas fa-download mr-1"></i>189</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <span class="text-xs text-gray-500 ml-1">4.9</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=24&h=24&fit=crop&crop=face&auto=format" 
+                                     alt="作者头像" class="w-6 h-6 rounded-full">
+                                <span class="text-xs text-gray-600">鑫奇队</span>
+                            </div>
+                            <span class="text-xs text-gray-500">2天前</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 作品项目 2 -->
+            <div class="masonry-item gallery-item" data-category="industrial">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer" onclick="openModal('work2')">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?w=400&h=250&fit=crop&auto=format" 
+                             alt="智能工厂" class="w-full object-cover">
+                        <div class="absolute top-3 left-3">
+                            <span class="px-2 py-1 bg-orange-500 text-white text-xs rounded-full">🏭 工业仿真</span>
+                        </div>
+                        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                            <div class="opacity-0 hover:opacity-100 transition-opacity">
+                                <i class="fas fa-play-circle text-white text-4xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4">
+                        <h3 class="font-semibold text-gray-900 mb-2">智能制造数字孪生</h3>
+                        <p class="text-sm text-gray-600 mb-3">完整的汽车制造车间数字化重现，支持生产流程优化和效率分析。</p>
+                        
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3 text-xs text-gray-500">
+                                <span><i class="fas fa-eye mr-1"></i>1.8k</span>
+                                <span><i class="fas fa-heart mr-1"></i>234</span>
+                                <span><i class="fas fa-download mr-1"></i>67</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-gray-300 text-xs"></i>
+                                <span class="text-xs text-gray-500 ml-1">4.2</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <img src="https://images.unsplash.com/photo-1494790108755-2616b612e8c1?w=24&h=24&fit=crop&crop=face&auto=format" 
+                                     alt="作者头像" class="w-6 h-6 rounded-full">
+                                <span class="text-xs text-gray-600">工业小王</span>
+                            </div>
+                            <span class="text-xs text-gray-500">5天前</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 作品项目 3 -->
+            <div class="masonry-item gallery-item" data-category="gaming featured">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer" onclick="openModal('work3')">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1494232410401-ad00d5433cfa?w=400&h=350&fit=crop&auto=format" 
+                             alt="赛车游戏场景" class="w-full object-cover">
+                        <div class="absolute top-3 left-3">
+                            <span class="px-2 py-1 bg-purple-500 text-white text-xs rounded-full">🎮 游戏场景</span>
+                        </div>
+                        <div class="absolute top-3 right-3">
+                            <span class="px-2 py-1 bg-yellow-500 text-white text-xs rounded-full">
+                                <i class="fas fa-star mr-1"></i>精选
+                            </span>
+                        </div>
+                        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                            <div class="opacity-0 hover:opacity-100 transition-opacity">
+                                <i class="fas fa-play-circle text-white text-4xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4">
+                        <h3 class="font-semibold text-gray-900 mb-2">极速夜景赛道</h3>
+                        <p class="text-sm text-gray-600 mb-3">充满挑战的城市夜景赛道，动态天气系统和智能NPC为游戏增添无限乐趣。</p>
+                        
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3 text-xs text-gray-500">
+                                <span><i class="fas fa-eye mr-1"></i>3.1k</span>
+                                <span><i class="fas fa-heart mr-1"></i>789</span>
+                                <span><i class="fas fa-download mr-1"></i>234</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <span class="text-xs text-gray-500 ml-1">4.8</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <img src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=24&h=24&fit=crop&crop=face&auto=format" 
+                                     alt="作者头像" class="w-6 h-6 rounded-full">
+                                <span class="text-xs text-gray-600">游戏大师</span>
+                            </div>
+                            <span class="text-xs text-gray-500">1周前</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 作品项目 4 -->
+            <div class="masonry-item gallery-item" data-category="automotive">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer" onclick="openModal('work4')">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?w=400&h=280&fit=crop&auto=format" 
+                             alt="高速公路场景" class="w-full object-cover">
+                        <div class="absolute top-3 left-3">
+                            <span class="px-2 py-1 bg-blue-500 text-white text-xs rounded-full">🚗 自动驾驶</span>
+                        </div>
+                        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                            <div class="opacity-0 hover:opacity-100 transition-opacity">
+                                <i class="fas fa-play-circle text-white text-4xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4">
+                        <h3 class="font-semibold text-gray-900 mb-2">高速公路自动并道</h3>
+                        <p class="text-sm text-gray-600 mb-3">多车道高速公路场景，专门用于测试自动驾驶车辆的并道决策算法。</p>
+                        
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3 text-xs text-gray-500">
+                                <span><i class="fas fa-eye mr-1"></i>1.5k</span>
+                                <span><i class="fas fa-heart mr-1"></i>145</span>
+                                <span><i class="fas fa-download mr-1"></i>89</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-gray-300 text-xs"></i>
+                                <span class="text-xs text-gray-500 ml-1">4.1</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <img src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=24&h=24&fit=crop&crop=face&auto=format" 
+                                     alt="作者头像" class="w-6 h-6 rounded-full">
+                                <span class="text-xs text-gray-600">自驾先锋</span>
+                            </div>
+                            <span class="text-xs text-gray-500">3天前</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 作品项目 5 -->
+            <div class="masonry-item gallery-item" data-category="industrial">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer" onclick="openModal('work5')">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1586953208448-b95a79798f07?w=400&h=220&fit=crop&auto=format" 
+                             alt="智能仓储" class="w-full object-cover">
+                        <div class="absolute top-3 left-3">
+                            <span class="px-2 py-1 bg-orange-500 text-white text-xs rounded-full">🏭 工业仿真</span>
+                        </div>
+                        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                            <div class="opacity-0 hover:opacity-100 transition-opacity">
+                                <i class="fas fa-play-circle text-white text-4xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4">
+                        <h3 class="font-semibold text-gray-900 mb-2">智能仓储物流中心</h3>
+                        <p class="text-sm text-gray-600 mb-3">现代化物流仓库，集成自动化设备和智能调度系统。</p>
+                        
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3 text-xs text-gray-500">
+                                <span><i class="fas fa-eye mr-1"></i>987</span>
+                                <span><i class="fas fa-heart mr-1"></i>156</span>
+                                <span><i class="fas fa-download mr-1"></i>45</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-gray-300 text-xs"></i>
+                                <span class="text-xs text-gray-500 ml-1">4.3</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <img src="https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=24&h=24&fit=crop&crop=face&auto=format" 
+                                     alt="作者头像" class="w-6 h-6 rounded-full">
+                                <span class="text-xs text-gray-600">物流专家</span>
+                            </div>
+                            <span class="text-xs text-gray-500">1周前</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 作品项目 6 -->
+            <div class="masonry-item gallery-item" data-category="gaming">
+                <div class="bg-white rounded-xl shadow-lg overflow-hidden cursor-pointer" onclick="openModal('work6')">
+                    <div class="relative">
+                        <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?w=400&h=320&fit=crop&auto=format" 
+                             alt="科幻城市" class="w-full object-cover">
+                        <div class="absolute top-3 left-3">
+                            <span class="px-2 py-1 bg-purple-500 text-white text-xs rounded-full">🎮 游戏场景</span>
+                        </div>
+                        <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-20 transition-all duration-300 flex items-center justify-center">
+                            <div class="opacity-0 hover:opacity-100 transition-opacity">
+                                <i class="fas fa-play-circle text-white text-4xl"></i>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="p-4">
+                        <h3 class="font-semibold text-gray-900 mb-2">未来科幻都市</h3>
+                        <p class="text-sm text-gray-600 mb-3">充满科技感的未来城市场景，适用于科幻题材游戏开发。</p>
+                        
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="flex items-center space-x-3 text-xs text-gray-500">
+                                <span><i class="fas fa-eye mr-1"></i>2.7k</span>
+                                <span><i class="fas fa-heart mr-1"></i>567</span>
+                                <span><i class="fas fa-download mr-1"></i>178</span>
+                            </div>
+                            <div class="flex items-center space-x-1">
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <i class="fas fa-star text-yellow-400 text-xs"></i>
+                                <span class="text-xs text-gray-500 ml-1">4.7</span>
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-2">
+                                <img src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=24&h=24&fit=crop&crop=face&auto=format" 
+                                     alt="作者头像" class="w-6 h-6 rounded-full">
+                                <span class="text-xs text-gray-600">科幻创作者</span>
+                            </div>
+                            <span class="text-xs text-gray-500">4天前</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 加载更多 -->
+        <div class="text-center mt-12">
+            <button class="px-8 py-3 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all">
+                <i class="fas fa-plus mr-2"></i>
+                加载更多作品
+            </button>
+        </div>
+    </div>
+
+    <!-- 模态框 -->
+    <div id="modal" class="modal hidden fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div class="p-6">
+                <!-- 模态框头部 -->
+                <div class="flex items-center justify-between mb-6">
+                    <h2 id="modal-title" class="text-2xl font-bold text-gray-900">作品详情</h2>
+                    <button onclick="closeModal()" class="p-2 hover:bg-gray-100 rounded-lg transition-colors">
+                        <i class="fas fa-times text-gray-500"></i>
+                    </button>
+                </div>
+
+                <!-- 模态框内容 -->
+                <div class="space-y-6">
+                    <div class="relative">
+                        <img id="modal-image" src="" alt="" class="w-full h-64 md:h-96 object-cover rounded-xl">
+                        <button class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 hover:bg-opacity-50 transition-all rounded-xl">
+                            <i class="fas fa-play-circle text-white text-6xl"></i>
+                        </button>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        <div class="md:col-span-2">
+                            <h3 class="text-lg font-semibold mb-3">作品描述</h3>
+                            <p id="modal-description" class="text-gray-600 leading-relaxed"></p>
+                            
+                            <h4 class="text-lg font-semibold mt-6 mb-3">技术参数</h4>
+                            <div class="grid grid-cols-2 gap-4 text-sm">
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <span class="text-gray-500">场景对象</span>
+                                    <p class="font-medium">25 个</p>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <span class="text-gray-500">生成时间</span>
+                                    <p class="font-medium">28 秒</p>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <span class="text-gray-500">文件大小</span>
+                                    <p class="font-medium">12.5 MB</p>
+                                </div>
+                                <div class="bg-gray-50 p-3 rounded-lg">
+                                    <span class="text-gray-500">支持格式</span>
+                                    <p class="font-medium">UE5, Unity, Blender</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <div class="bg-gray-50 p-4 rounded-xl">
+                                <h4 class="font-semibold mb-3">作品信息</h4>
+                                <div class="space-y-3 text-sm">
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">发布时间</span>
+                                        <span>2024/1/15</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">浏览量</span>
+                                        <span>2.3k</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">点赞数</span>
+                                        <span>456</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">下载量</span>
+                                        <span>189</span>
+                                    </div>
+                                    <div class="flex justify-between">
+                                        <span class="text-gray-600">评分</span>
+                                        <div class="flex items-center">
+                                            <span class="mr-1">4.9</span>
+                                            <div class="flex text-yellow-400 text-xs">
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                                <i class="fas fa-star"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="mt-6 space-y-3">
+                                    <button class="w-full bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-2 px-4 rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all">
+                                        <i class="fas fa-download mr-2"></i>下载作品
+                                    </button>
+                                    <button class="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <i class="fas fa-heart mr-2"></i>收藏作品
+                                    </button>
+                                    <button class="w-full border border-gray-300 text-gray-700 py-2 px-4 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <i class="fas fa-share mr-2"></i>分享作品
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 筛选功能
+        function filterGallery(category) {
+            // 更新按钮状态
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-indigo-500', 'text-white');
+                btn.classList.add('bg-white', 'text-gray-600');
+            });
+            
+            event.target.classList.add('active', 'bg-indigo-500', 'text-white');
+            event.target.classList.remove('bg-white', 'text-gray-600');
+            
+            // 筛选作品
+            const items = document.querySelectorAll('.gallery-item');
+            items.forEach(item => {
+                if (category === 'all' || item.dataset.category.includes(category)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // 打开模态框
+        function openModal(workId) {
+            const modal = document.getElementById('modal');
+            modal.classList.remove('hidden');
+            setTimeout(() => modal.classList.add('show'), 10);
+            
+            // 这里可以根据workId加载具体的作品信息
+            // 示例数据
+            document.getElementById('modal-title').textContent = '复杂城市交通仿真';
+            document.getElementById('modal-image').src = 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=800&h=400&fit=crop&auto=format';
+            document.getElementById('modal-description').textContent = '这是一个高度真实的城市交通仿真场景，完美重现了复杂的十字路口环境。场景包含多条车道、智能交通信号灯系统、行人通道、公交专用道等城市交通基础设施。该场景特别适用于自动驾驶算法的测试和验证，能够模拟各种复杂的交通状况和突发事件。';
+        }
+
+        // 关闭模态框
+        function closeModal() {
+            const modal = document.getElementById('modal');
+            modal.classList.remove('show');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        // 点击模态框外部关闭
+        document.getElementById('modal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // ESC键关闭模态框
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeModal();
+            }
+        });
+
+        // 页面加载动画
+        window.addEventListener('load', function() {
+            const items = document.querySelectorAll('.gallery-item');
+            items.forEach((item, index) => {
+                item.style.opacity = '0';
+                item.style.transform = 'translateY(20px)';
+                item.style.transition = 'all 0.6s ease';
+                
+                setTimeout(() => {
+                    item.style.opacity = '1';
+                    item.style.transform = 'translateY(0)';
+                }, index * 100);
+            });
+        });
+    </script>
+</body>
+</html>
