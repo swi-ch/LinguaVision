@@ -433,31 +433,40 @@
             const preview = document.getElementById('scene-preview');
             
             preview.innerHTML = `
-                <div class="h-full bg-gray-900 text-white p-6 rounded-lg overflow-hidden relative">
+                <div class="h-full bg-gray-900 text-white p-6 rounded-lg overflow-hidden relative" style="min-height: 400px; max-height: 500px;">
                     <!-- 背景网格效果 -->
                     <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 20px 20px;"></div>
                     
                     <!-- 主标题 -->
-                    <div class="text-center mb-6 relative z-10">
+                    <div class="text-center mb-4 relative z-10">
                         <div class="flex items-center justify-center space-x-3 mb-2">
-                            <div class="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 rounded-lg flex items-center justify-center">
-                                <i class="fas fa-brain text-white text-sm"></i>
+                            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                                <i class="fas fa-brain text-white"></i>
                             </div>
-                            <h3 class="text-xl font-bold">LinguaVision AI Engine</h3>
+                            <h3 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">LinguaVision AI Engine</h3>
                         </div>
                         <p class="text-gray-400 text-sm">正在处理您的场景描述 · ${currentModel}</p>
                     </div>
                     
-                    <!-- 处理步骤 -->
-                    <div class="space-y-4 relative z-10" id="processing-steps">
+                    <!-- 处理步骤容器 -->
+                    <div class="relative z-10 flex-1" id="processing-steps" style="min-height: 280px;">
                         <!-- 步骤将通过JavaScript动态添加 -->
                     </div>
                     
                     <!-- 底部统计信息 -->
-                    <div class="absolute bottom-4 left-6 right-6 flex justify-between text-xs text-gray-500">
-                        <span>Model: ${currentModel}</span>
-                        <span id="processing-time">00:00</span>
-                        <span>Status: Processing</span>
+                    <div class="absolute bottom-4 left-6 right-6 flex justify-between text-xs text-gray-500 border-t border-gray-700 pt-3">
+                        <span class="flex items-center space-x-2">
+                            <i class="fas fa-robot"></i>
+                            <span>Model: ${currentModel}</span>
+                        </span>
+                        <span class="flex items-center space-x-2">
+                            <i class="fas fa-clock"></i>
+                            <span id="processing-time">00:00</span>
+                        </span>
+                        <span class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                            <span>Processing</span>
+                        </span>
                     </div>
                 </div>
             `;
@@ -552,73 +561,131 @@
 
         function addProcessingStep(step, index) {
             const stepsContainer = document.getElementById('processing-steps');
+            
+            // 清空之前的步骤内容
+            stepsContainer.innerHTML = '';
+            
             const stepElement = document.createElement('div');
             stepElement.id = `step-${step.id}`;
             stepElement.className = 'opacity-0 transform translate-y-4';
             
             stepElement.innerHTML = `
-                <div class="bg-gray-800 rounded-lg p-4 border border-gray-700">
-                    <div class="flex items-center space-x-3 mb-3">
-                        <div class="w-10 h-10 bg-gradient-to-r ${step.color} rounded-lg flex items-center justify-center">
-                            <i class="${step.icon} text-white"></i>
+                <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-xl">
+                    <!-- 步骤头部 -->
+                    <div class="flex items-center justify-between mb-6">
+                        <div class="flex items-center space-x-4">
+                            <div class="w-12 h-12 bg-gradient-to-r ${step.color} rounded-xl flex items-center justify-center shadow-lg">
+                                <i class="${step.icon} text-white text-lg"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-white text-lg">${step.title}</h4>
+                                <p class="text-gray-400 text-sm">${step.description}</p>
+                            </div>
                         </div>
-                        <div class="flex-1">
-                            <h4 class="font-semibold text-white">${step.title}</h4>
-                            <p class="text-gray-400 text-sm">${step.description}</p>
-                        </div>
-                        <div class="flex items-center space-x-2">
-                            <div class="w-4 h-4 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" id="spinner-${step.id}"></div>
-                            <i class="fas fa-check-circle text-green-500 hidden" id="check-${step.id}"></i>
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" id="spinner-${step.id}"></div>
+                            <i class="fas fa-check-circle text-green-400 text-xl hidden" id="check-${step.id}"></i>
                         </div>
                     </div>
                     
-                    <!-- 技术细节 -->
-                    <div class="space-y-1" id="details-${step.id}">
+                    <!-- 整体进度条 -->
+                    <div class="mb-6">
+                        <div class="flex justify-between text-xs text-gray-400 mb-2">
+                            <span>处理进度</span>
+                            <span id="step-progress-text-${step.id}">0%</span>
+                        </div>
+                        <div class="bg-gray-700 rounded-full h-2">
+                            <div class="bg-gradient-to-r ${step.color} h-2 rounded-full transition-all duration-500" 
+                                 style="width: 0%" id="progress-${step.id}"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- 技术细节网格 -->
+                    <div class="grid grid-cols-2 gap-3" id="details-${step.id}">
                         ${step.details.map((detail, i) => `
-                            <div class="text-xs text-gray-500 flex items-center space-x-2 opacity-0" id="detail-${step.id}-${i}">
-                                <div class="w-1 h-1 bg-gray-600 rounded-full"></div>
-                                <span>${detail}</span>
-                                <i class="fas fa-check text-green-500 text-xs ml-auto hidden" id="detail-check-${step.id}-${i}"></i>
+                            <div class="bg-gray-900/50 rounded-lg p-3 border border-gray-600 opacity-0 transform translate-x-4" id="detail-${step.id}-${i}">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-gradient-to-r ${step.color} rounded-full opacity-50" id="detail-dot-${step.id}-${i}"></div>
+                                    <span class="text-xs text-gray-300 flex-1">${detail}</span>
+                                    <i class="fas fa-check text-green-400 text-xs hidden" id="detail-check-${step.id}-${i}"></i>
+                                </div>
                             </div>
                         `).join('')}
                     </div>
                     
-                    <!-- 进度条 -->
-                    <div class="mt-3 bg-gray-700 rounded-full h-1">
-                        <div class="bg-gradient-to-r ${step.color} h-1 rounded-full transition-all duration-300" 
-                             style="width: 0%" id="progress-${step.id}"></div>
+                    <!-- 技术信息 -->
+                    <div class="mt-6 bg-gray-900/30 rounded-lg p-4 border border-gray-600">
+                        <div class="flex items-center justify-between text-xs text-gray-500">
+                            <span>引擎: ${step.id.toUpperCase()}</span>
+                            <span>模型: ${currentModel}</span>
+                            <span id="step-timer-${step.id}">00:00</span>
+                        </div>
                     </div>
                 </div>
             `;
             
             stepsContainer.appendChild(stepElement);
             
-            // 添加进入动画
+            // 添加平滑的进入动画
             setTimeout(() => {
                 stepElement.style.opacity = '1';
                 stepElement.style.transform = 'translateY(0)';
-                stepElement.style.transition = 'all 0.5s ease';
+                stepElement.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
                 
-                // 开始显示技术细节
+                // 开始显示技术细节和计时器
                 animateStepDetails(step);
-            }, 100);
+                startStepTimer(step.id);
+            }, 200);
+        }
+
+        function startStepTimer(stepId) {
+            let seconds = 0;
+            const timer = setInterval(() => {
+                seconds++;
+                const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
+                const secs = (seconds % 60).toString().padStart(2, '0');
+                const timerElement = document.getElementById(`step-timer-${stepId}`);
+                if (timerElement) {
+                    timerElement.textContent = `${minutes}:${secs}`;
+                } else {
+                    clearInterval(timer);
+                }
+            }, 1000);
+            
+            // 存储定时器ID以便清理
+            window[`stepTimer_${stepId}`] = timer;
         }
 
         function animateStepDetails(step) {
             let detailIndex = 0;
             const showDetailInterval = setInterval(() => {
                 const detailElement = document.getElementById(`detail-${step.id}-${detailIndex}`);
+                const dotElement = document.getElementById(`detail-dot-${step.id}-${detailIndex}`);
+                
                 if (detailElement) {
+                    // 显示细节卡片
                     detailElement.style.opacity = '1';
-                    detailElement.style.transition = 'opacity 0.3s ease';
+                    detailElement.style.transform = 'translateX(0)';
+                    detailElement.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
                     
-                    // 2秒后显示完成标记
+                    // 激活状态指示点
+                    if (dotElement) {
+                        dotElement.style.opacity = '1';
+                        dotElement.style.transform = 'scale(1.2)';
+                        dotElement.style.transition = 'all 0.3s ease';
+                    }
+                    
+                    // 1.5秒后显示完成标记
                     setTimeout(() => {
                         const checkElement = document.getElementById(`detail-check-${step.id}-${detailIndex}`);
                         if (checkElement) {
                             checkElement.classList.remove('hidden');
+                            // 重置指示点大小
+                            if (dotElement) {
+                                dotElement.style.transform = 'scale(1)';
+                            }
                         }
-                    }, 2000);
+                    }, 1500);
                 }
                 
                 detailIndex++;
@@ -626,38 +693,65 @@
                     clearInterval(showDetailInterval);
                 }
                 
-                // 更新进度条
+                // 更新整体进度条和百分比
                 const progress = (detailIndex / step.details.length) * 100;
                 const progressBar = document.getElementById(`progress-${step.id}`);
+                const progressText = document.getElementById(`step-progress-text-${step.id}`);
+                
                 if (progressBar) {
                     progressBar.style.width = `${progress}%`;
                 }
-            }, 600);
+                if (progressText) {
+                    progressText.textContent = `${Math.round(progress)}%`;
+                }
+            }, 800);
         }
 
         function completeStep(stepId) {
             const spinner = document.getElementById(`spinner-${stepId}`);
             const check = document.getElementById(`check-${stepId}`);
             const progressBar = document.getElementById(`progress-${stepId}`);
+            const progressText = document.getElementById(`step-progress-text-${stepId}`);
             
-            if (spinner) spinner.style.display = 'none';
-            if (check) check.classList.remove('hidden');
-            if (progressBar) progressBar.style.width = '100%';
+            // 清理该步骤的定时器
+            if (window[`stepTimer_${stepId}`]) {
+                clearInterval(window[`stepTimer_${stepId}`]);
+                delete window[`stepTimer_${stepId}`];
+            }
+            
+            if (spinner) {
+                spinner.style.display = 'none';
+            }
+            if (check) {
+                check.classList.remove('hidden');
+                // 添加完成动画
+                check.style.transform = 'scale(0)';
+                setTimeout(() => {
+                    check.style.transform = 'scale(1)';
+                    check.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
+                }, 100);
+            }
+            if (progressBar) {
+                progressBar.style.width = '100%';
+            }
+            if (progressText) {
+                progressText.textContent = '100%';
+            }
         }
 
         function showTechnicalResult() {
             const preview = document.getElementById('scene-preview');
             
             preview.innerHTML = `
-                <div class="h-full bg-gray-900 text-white p-6 rounded-lg overflow-hidden">
+                <div class="h-full bg-gray-900 text-white p-6 rounded-lg overflow-hidden relative" style="min-height: 400px; max-height: 500px;">
                     <!-- 成功标题 -->
-                    <div class="text-center mb-6">
+                    <div class="text-center mb-4">
                         <div class="flex items-center justify-center space-x-3 mb-3">
-                            <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center">
+                            <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
                                 <i class="fas fa-check text-white text-xl"></i>
                             </div>
                             <div>
-                                <h3 class="text-xl font-bold text-green-400">场景生成完成</h3>
+                                <h3 class="text-xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">场景生成完成</h3>
                                 <p class="text-gray-400 text-sm">所有系统处理成功</p>
                             </div>
                         </div>
@@ -725,15 +819,20 @@
                     </div>
                     
                     <!-- 底部操作按钮 -->
-                    <div class="flex space-x-2 mt-4">
-                        <button class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-blue-800 transition-all">
-                            <i class="fas fa-download mr-2"></i>
-                            下载文件
-                        </button>
-                        <button class="flex-1 bg-gray-700 text-gray-300 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-600 transition-all">
-                            <i class="fas fa-eye mr-2"></i>
-                            预览代码
-                    </button>
+                    <div class="absolute bottom-6 left-6 right-6">
+                        <div class="flex space-x-3">
+                            <button class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg">
+                                <i class="fas fa-download mr-2"></i>
+                                下载文件
+                            </button>
+                            <button class="flex-1 bg-gray-700 text-gray-300 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-600 transition-all">
+                                <i class="fas fa-eye mr-2"></i>
+                                预览代码
+                            </button>
+                            <button class="px-4 py-2.5 bg-gray-800 text-gray-400 rounded-lg hover:bg-gray-700 transition-all">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
