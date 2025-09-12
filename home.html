@@ -6,6 +6,8 @@
     <title>工作台 - LinguaVision</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- 加载配置文件 -->
+    <script src="netlify-config.js"></script>
     <style>
         body {
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
@@ -75,9 +77,43 @@
                 transform: translateY(0);
             }
         }
+
+        /* 连接状态指示器 */
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            z-index: 1000;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        
+        .connection-online {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+        
+        .connection-offline {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+        }
+        
+        .connection-checking {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
+    <!-- 连接状态指示器 -->
+    <div id="connection-status" class="connection-status connection-checking">
+        <i class="fas fa-spinner fa-spin mr-2"></i>
+        检查连接...
+    </div>
+
     <div class="max-w-7xl mx-auto p-6 space-y-8">
         
         <!-- 欢迎横幅 -->
@@ -89,15 +125,15 @@
                     <div class="flex items-center space-x-6 mt-4 text-sm">
                         <div class="flex items-center space-x-2">
                             <i class="fas fa-check-circle"></i>
-                            <span>已生成场景: 23</span>
+                            <span>已生成场景: <span id="stats-generated">23</span></span>
                         </div>
                         <div class="flex items-center space-x-2">
                             <i class="fas fa-download"></i>
-                            <span>成功导出: 18</span>
+                            <span>成功导出: <span id="stats-exported">18</span></span>
                         </div>
                         <div class="flex items-center space-x-2">
                             <i class="fas fa-clock"></i>
-                            <span>平均用时: 28秒</span>
+                            <span>平均用时: <span id="stats-time">28秒</span></span>
                         </div>
                     </div>
                 </div>
@@ -180,8 +216,8 @@
                             </div>
                             
                         <div class="flex items-center space-x-2 text-sm text-gray-500">
-                            <div class="w-2 h-2 bg-green-400 rounded-full"></div>
-                            <span>专用微调模型已就绪</span>
+                            <div class="w-2 h-2 bg-green-400 rounded-full" id="backend-status"></div>
+                            <span id="backend-status-text">检查后端连接...</span>
                         </div>
                         </div>
                     </div>
@@ -220,9 +256,9 @@
 
                         <!-- 生成按钮 -->
                         <div class="flex items-center space-x-3">
-                            <button onclick="generateScene()" class="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                            <button id="generate-btn" onclick="generateScene()" class="flex-1 bg-gradient-to-r from-indigo-500 to-purple-600 text-white py-3 px-6 rounded-lg font-medium hover:from-indigo-600 hover:to-purple-700 transition-all focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed">
                                 <i class="fas fa-sparkles mr-2"></i>
-                                立即生成场景
+                                <span id="generate-btn-text">立即生成场景</span>
                             </button>
                             <button class="px-4 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors">
                                 <i class="fas fa-save"></i>
@@ -256,21 +292,21 @@
                                 <div class="w-3 h-3 bg-blue-400 rounded-full"></div>
                                 <span class="text-sm text-gray-600">生成场景</span>
                             </div>
-                            <span class="font-semibold text-gray-900">5</span>
+                            <span class="font-semibold text-gray-900" id="daily-generated">5</span>
                         </div>
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-2">
                                 <div class="w-3 h-3 bg-green-400 rounded-full"></div>
                                 <span class="text-sm text-gray-600">成功导出</span>
                             </div>
-                            <span class="font-semibold text-gray-900">3</span>
+                            <span class="font-semibold text-gray-900" id="daily-exported">3</span>
                         </div>
                         <div class="flex items-center justify-between">
                             <div class="flex items-center space-x-2">
                                 <div class="w-3 h-3 bg-purple-400 rounded-full"></div>
                                 <span class="text-sm text-gray-600">平均用时</span>
                             </div>
-                            <span class="font-semibold text-gray-900">24s</span>
+                            <span class="font-semibold text-gray-900" id="daily-avgtime">24s</span>
                         </div>
                     </div>
                 </div>
@@ -330,16 +366,409 @@
     </div>
 
     <script>
-        // 当前选中的模型
+        // 全局变量
         let currentModel = 'ERNIE-4.5-21B-A3B';
         let currentModelColor = 'blue';
+        let isGenerating = false;
         
-        // 模型选择器功能
+        // 页面加载时初始化
+        document.addEventListener('DOMContentLoaded', function() {
+            checkBackendConnection();
+            initializeUI();
+        });
+
+        // 检查后端连接状态
+        async function checkBackendConnection() {
+            const statusIndicator = document.getElementById('connection-status');
+            const backendStatus = document.getElementById('backend-status');
+            const backendStatusText = document.getElementById('backend-status-text');
+            
+            try {
+                statusIndicator.className = 'connection-status connection-checking';
+                statusIndicator.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>检查连接...';
+                
+                const response = await window.callLinguaVisionAPI('/api/health');
+                
+                if (response.status === 'online') {
+                    // 连接成功
+                    statusIndicator.className = 'connection-status connection-online';
+                    statusIndicator.innerHTML = '<i class="fas fa-check-circle mr-2"></i>后端已连接';
+                    
+                    backendStatus.className = 'w-2 h-2 bg-green-400 rounded-full';
+                    backendStatusText.textContent = 'DSG系统就绪';
+                    
+                    // 3秒后隐藏状态指示器
+                    setTimeout(() => {
+                        statusIndicator.style.opacity = '0';
+                        setTimeout(() => {
+                            statusIndicator.style.display = 'none';
+                        }, 300);
+                    }, 3000);
+                } else {
+                    throw new Error('后端服务状态异常');
+                }
+            } catch (error) {
+                console.error('后端连接检查失败:', error);
+                
+                statusIndicator.className = 'connection-status connection-offline';
+                statusIndicator.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>连接失败';
+                
+                backendStatus.className = 'w-2 h-2 bg-red-400 rounded-full';
+                backendStatusText.textContent = '后端服务离线';
+                
+                // 显示详细错误信息
+                showNotification(`后端连接失败: ${error.message}`, 'error', 10000);
+            }
+        }
+
+        // 场景生成主函数
+        async function generateScene() {
+            if (isGenerating) return;
+            
+            const input = document.getElementById('scene-input').value.trim();
+            if (!input) {
+                showNotification('请先输入场景描述！', 'warning');
+                return;
+            }
+
+            // 设置生成状态
+            setGeneratingState(true);
+            
+            try {
+                // 显示技术性加载过程
+                showTechnicalProcessing();
+                
+                // 调用后端API
+                const response = await window.callLinguaVisionAPI('/api/generate-scene', {
+                    method: 'POST',
+                    body: JSON.stringify({ description: input })
+                });
+
+                if (response.success) {
+                    // 生成成功
+                    showGenerationResult(response.data);
+                    showNotification('场景生成成功！', 'success');
+                    
+                    // 更新统计数据
+                    updateStats();
+                } else {
+                    // 生成失败
+                    throw new Error(response.error || '场景生成失败');
+                }
+            } catch (error) {
+                console.error('场景生成错误:', error);
+                showError(`生成失败: ${error.message}`);
+                showNotification(`生成失败: ${error.message}`, 'error');
+            } finally {
+                setGeneratingState(false);
+            }
+        }
+
+        // 设置生成状态
+        function setGeneratingState(generating) {
+            isGenerating = generating;
+            const btn = document.getElementById('generate-btn');
+            const btnText = document.getElementById('generate-btn-text');
+            
+            if (generating) {
+                btn.disabled = true;
+                btn.classList.add('opacity-50', 'cursor-not-allowed');
+                btnText.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>正在生成...';
+            } else {
+                btn.disabled = false;
+                btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                btnText.innerHTML = '<i class="fas fa-sparkles mr-2"></i>立即生成场景';
+            }
+        }
+
+        // 显示通知
+        function showNotification(message, type = 'info', duration = 3000) {
+            const notification = document.createElement('div');
+            
+            let bgColor, icon;
+            switch (type) {
+                case 'success':
+                    bgColor = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                    icon = 'fa-check-circle';
+                    break;
+                case 'error':
+                    bgColor = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                    icon = 'fa-exclamation-circle';
+                    break;
+                case 'warning':
+                    bgColor = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+                    icon = 'fa-exclamation-triangle';
+                    break;
+                default:
+                    bgColor = 'linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%)';
+                    icon = 'fa-info-circle';
+            }
+            
+            notification.innerHTML = `
+                <div style="position: fixed; top: 20px; right: 20px; z-index: 1001; background: ${bgColor}; color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); animation: slideIn 0.3s ease; max-width: 400px;">
+                    <i class="fas ${icon} mr-2"></i>
+                    ${message}
+                </div>
+            `;
+            document.body.appendChild(notification);
+            
+            // 自动移除通知
+            setTimeout(() => {
+                notification.style.opacity = '0';
+                setTimeout(() => {
+                    notification.remove();
+                }, 300);
+            }, duration);
+        }
+
+        // 显示技术性处理过程（真实版本）
+        function showTechnicalProcessing() {
+            const preview = document.getElementById('scene-preview');
+            
+            preview.innerHTML = `
+                <div class="h-full bg-gray-900 text-white p-6 rounded-lg overflow-hidden relative" style="min-height: 400px; max-height: 500px;">
+                    <!-- 背景网格效果 -->
+                    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 20px 20px;"></div>
+                    
+                    <!-- 主标题 -->
+                    <div class="text-center mb-4 relative z-10">
+                        <div class="flex items-center justify-center space-x-3 mb-2">
+                            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
+                                <i class="fas fa-brain text-white"></i>
+                            </div>
+                            <h3 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">LinguaVision AI Engine</h3>
+                        </div>
+                        <p class="text-gray-400 text-sm">正在连接DSG后端系统 · ${currentModel}</p>
+                    </div>
+                    
+                    <!-- 实时状态 -->
+                    <div class="relative z-10 flex items-center justify-center" style="min-height: 280px;">
+                        <div class="text-center">
+                            <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                            <p class="text-lg font-medium mb-2">正在处理您的场景描述...</p>
+                            <p class="text-gray-400 text-sm">这可能需要30秒到2分钟</p>
+                        </div>
+                    </div>
+                    
+                    <!-- 底部状态信息 -->
+                    <div class="absolute bottom-4 left-6 right-6 flex justify-between text-xs text-gray-500 border-t border-gray-700 pt-3">
+                        <span class="flex items-center space-x-2">
+                            <i class="fas fa-robot"></i>
+                            <span>Model: ${currentModel}</span>
+                        </span>
+                        <span class="flex items-center space-x-2">
+                            <i class="fas fa-server"></i>
+                            <span>Backend: DSG System</span>
+                        </span>
+                        <span class="flex items-center space-x-2">
+                            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                            <span>Processing</span>
+                        </span>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 显示生成结果
+        function showGenerationResult(data) {
+            const preview = document.getElementById('scene-preview');
+            
+            preview.innerHTML = `
+                <div class="h-full bg-gray-900 text-white p-6 rounded-lg overflow-hidden relative flex flex-col" style="min-height: 400px; max-height: 500px;">
+                    <!-- 成功标题 -->
+                    <div class="text-center mb-4">
+                        <div class="flex items-center justify-center space-x-3 mb-3">
+                            <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
+                                <i class="fas fa-check text-white text-xl"></i>
+                            </div>
+                            <div>
+                                <h3 class="text-xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">场景生成完成</h3>
+                                <p class="text-gray-400 text-sm">处理耗时: ${Math.round(data.processingTime / 1000)}秒</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 可滚动内容区域 -->
+                    <div class="flex-1 overflow-y-auto pr-2" style="max-height: 280px;">
+                        <!-- 生成结果统计 -->
+                        <div class="grid grid-cols-3 gap-3 mb-4">
+                            <div class="bg-gray-800 rounded-lg p-2.5 text-center border border-gray-700">
+                                <div class="text-lg font-bold text-blue-400">${data.files ? data.files.length : 0}</div>
+                                <div class="text-xs text-gray-500">生成文件</div>
+                            </div>
+                            <div class="bg-gray-800 rounded-lg p-2.5 text-center border border-gray-700">
+                                <div class="text-lg font-bold text-green-400">${Math.round(data.processingTime / 1000)}</div>
+                                <div class="text-xs text-gray-500">处理秒数</div>
+                            </div>
+                            <div class="bg-gray-800 rounded-lg p-2.5 text-center border border-gray-700">
+                                <div class="text-lg font-bold text-purple-400">UE5</div>
+                                <div class="text-xs text-gray-500">目标引擎</div>
+                            </div>
+                        </div>
+                        
+                        <!-- 生成的文件列表 -->
+                        ${data.files && data.files.length > 0 ? `
+                        <div class="space-y-3 mb-4">
+                            <h4 class="text-sm font-semibold text-gray-300 mb-2">
+                                <i class="fas fa-file-code mr-2"></i>
+                                生成的文件 (${data.files.length})
+                            </h4>
+                            
+                            ${data.files.map(file => `
+                            <div class="bg-gray-800 rounded-lg border border-gray-700 p-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <div class="flex items-center space-x-2">
+                                        <i class="fas fa-file-code text-${file.type === 'header' ? 'blue' : 'green'}-400"></i>
+                                        <span class="font-mono text-sm text-gray-300">${file.name}</span>
+                                        <span class="px-2 py-1 bg-${file.type === 'header' ? 'blue' : 'green'}-900 text-${file.type === 'header' ? 'blue' : 'green'}-200 text-xs rounded">
+                                            ${file.type === 'header' ? '头文件' : '源代码'}
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center space-x-2">
+                                        <span class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</span>
+                                        <button onclick="downloadFile('${file.name}')" class="text-blue-400 hover:text-blue-300 text-xs">
+                                            <i class="fas fa-download"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                ${file.preview ? `<p class="text-xs text-gray-500 truncate">${file.preview}</p>` : ''}
+                            </div>
+                            `).join('')}
+                        </div>
+                        ` : ''}
+                        
+                        <!-- 处理日志摘要 -->
+                        ${data.output ? `
+                        <div class="bg-gray-800/50 border border-gray-600 rounded-lg p-3 mb-4">
+                            <h4 class="text-sm font-semibold text-gray-300 mb-2">
+                                <i class="fas fa-terminal mr-2"></i>
+                                处理日志
+                            </h4>
+                            <div class="text-xs text-gray-400 font-mono max-h-20 overflow-y-auto">
+                                ${data.output.split('\n').slice(-5).join('<br>')}
+                            </div>
+                        </div>
+                        ` : ''}
+                    </div>
+                    
+                    <!-- 固定底部操作按钮 -->
+                    <div class="border-t border-gray-700 pt-4 mt-4">
+                        <div class="flex space-x-3">
+                            ${data.files && data.files.length > 0 ? `
+                            <button onclick="downloadAllFiles()" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg">
+                                <i class="fas fa-download mr-2"></i>
+                                下载所有文件
+                            </button>
+                            ` : ''}
+                            <button onclick="viewFullLog()" class="flex-1 bg-gray-700 text-gray-300 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-600 transition-all">
+                                <i class="fas fa-eye mr-2"></i>
+                                查看完整日志
+                            </button>
+                            <button onclick="generateScene()" class="px-4 py-2.5 bg-gray-800 text-gray-400 rounded-lg hover:bg-gray-700 transition-all">
+                                <i class="fas fa-redo"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 显示错误信息
+        function showError(errorMessage) {
+            const preview = document.getElementById('scene-preview');
+            
+            preview.innerHTML = `
+                <div class="h-full bg-red-50 border-2 border-red-200 rounded-lg p-6 flex items-center justify-center">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
+                        </div>
+                        <h3 class="text-lg font-semibold text-red-800 mb-2">生成失败</h3>
+                        <p class="text-red-600 mb-4">${errorMessage}</p>
+                        <div class="space-x-3">
+                            <button onclick="generateScene()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                                <i class="fas fa-redo mr-2"></i>重试
+                            </button>
+                            <button onclick="checkBackendConnection()" class="px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors">
+                                <i class="fas fa-network-wired mr-2"></i>检查连接
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // 文件下载功能
+        async function downloadFile(filename) {
+            try {
+                const response = await fetch(window.LinguaVisionConfig.getEndpoint(`/api/download/${filename}`));
+                if (!response.ok) throw new Error('下载失败');
+                
+                const blob = await response.blob();
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(url);
+                
+                showNotification(`${filename} 下载成功`, 'success');
+            } catch (error) {
+                showNotification(`下载失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 下载所有文件
+        async function downloadAllFiles() {
+            try {
+                const response = await window.callLinguaVisionAPI('/api/files');
+                if (response.success && response.files.length > 0) {
+                    for (const file of response.files) {
+                        await downloadFile(file.name);
+                        // 添加小延迟避免同时下载太多文件
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                } else {
+                    showNotification('没有可下载的文件', 'warning');
+                }
+            } catch (error) {
+                showNotification(`批量下载失败: ${error.message}`, 'error');
+            }
+        }
+
+        // 查看完整日志
+        function viewFullLog() {
+            // 这里可以实现显示完整日志的功能
+            showNotification('完整日志功能待实现', 'info');
+        }
+
+        // 更新统计数据
+        function updateStats() {
+            // 简单的本地统计更新
+            const dailyGenerated = document.getElementById('daily-generated');
+            const current = parseInt(dailyGenerated.textContent) + 1;
+            dailyGenerated.textContent = current;
+        }
+
+        // 模板插入功能
+        function insertTemplate(type) {
+            const templates = {
+                '自动驾驶': '一辆白色特斯拉Model S在雨天城市道路上以50km/h行驶，前方红绿灯即将变红，左侧有大货车并行，右侧有电动自行车，需要测试自动紧急制动和变道决策算法。',
+                '工业仿真': '现代化汽车制造车间，包含6台KUKA工业机器人协同作业，传送带系统运输车身部件，3台AGV小车在指定路径运行物料，需要监控生产节拍和设备状态。',
+                '教育培训': '学校门口上下学时段交通安全培训场景，有学生横穿马路，校车停靠上下客，家长接送车辆，交警指挥交通，展示正确的交通行为规范。',
+                '游戏场景': '开放世界赛车游戏中的城市夜景赛道，包含急弯、隧道、跳跃点、加速带，动态天气从晴天转为暴雨，NPC车辆有不同的驾驶风格和AI行为。'
+            };
+            
+            document.getElementById('scene-input').value = templates[type] || '';
+        }
+
+        // 模型选择功能
         function toggleModelDropdown() {
             const dropdown = document.getElementById('model-dropdown');
             dropdown.classList.toggle('hidden');
             
-            // 点击外部关闭下拉菜单
             if (!dropdown.classList.contains('hidden')) {
                 setTimeout(() => {
                     document.addEventListener('click', closeDropdownOnClickOutside);
@@ -361,10 +790,8 @@
             currentModel = modelName;
             currentModelColor = color;
             
-            // 更新当前模型显示
             document.getElementById('current-model').textContent = modelName;
             
-            // 更新模型指示点颜色
             const colorClasses = {
                 'blue': 'bg-blue-500',
                 'green': 'bg-green-500'
@@ -373,488 +800,28 @@
             const indicator = document.querySelector('#model-selector .w-2.h-2');
             indicator.className = `w-2 h-2 rounded-full ${colorClasses[color]}`;
             
-            // 更新活跃状态
             document.querySelectorAll('.model-option').forEach(option => {
                 option.classList.remove('active');
             });
             event.target.closest('.model-option').classList.add('active');
             
-            // 更新模型信息
             const modelInfo = {
                 'ERNIE-4.5-21B-A3B': '基于海量场景数据微调优化，专为三维场景生成任务设计',
                 'GPT-4.1': 'GPT-4.1具有卓越的创意表现，适合复杂精细场景'
             };
             document.getElementById('model-info').textContent = modelInfo[modelName];
             
-            // 关闭下拉菜单
             document.getElementById('model-dropdown').classList.add('hidden');
-            
-            // 显示切换成功通知
-            showModelSwitchNotification(modelName);
-        }
-        
-        function showModelSwitchNotification(modelName) {
-            const notification = document.createElement('div');
-            notification.innerHTML = `
-                <div style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3); animation: slideIn 0.3s ease;">
-                    <i class="fas fa-robot mr-2"></i>
-                    已切换到 ${modelName}
-                </div>
-            `;
-            document.body.appendChild(notification);
-            
-            // 3秒后自动移除通知
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }
-        
-        // 模板插入功能
-        function insertTemplate(type) {
-            const templates = {
-                '自动驾驶': '一辆白色特斯拉Model S在雨天城市道路上以50km/h行驶，前方红绿灯即将变红，左侧有大货车并行，右侧有电动自行车，需要测试自动紧急制动和变道决策算法。',
-                '工业仿真': '现代化汽车制造车间，包含6台KUKA工业机器人协同作业，传送带系统运输车身部件，3台AGV小车在指定路径运行物料，需要监控生产节拍和设备状态。',
-                '教育培训': '学校门口上下学时段交通安全培训场景，有学生横穿马路，校车停靠上下客，家长接送车辆，交警指挥交通，展示正确的交通行为规范。',
-                '游戏场景': '开放世界赛车游戏中的城市夜景赛道，包含急弯、隧道、跳跃点、加速带，动态天气从晴天转为暴雨，NPC车辆有不同的驾驶风格和AI行为。'
-            };
-            
-            document.getElementById('scene-input').value = templates[type] || '';
+            showNotification(`已切换到 ${modelName}`, 'success');
         }
 
-        // 场景生成模拟
-        function generateScene() {
-            const input = document.getElementById('scene-input').value.trim();
-            if (!input) {
-                alert('请先输入场景描述！');
-                return;
-            }
-
-            // 显示技术性加载过程
-            const preview = document.getElementById('scene-preview');
-            
-            preview.innerHTML = `
-                <div class="h-full bg-gray-900 text-white p-6 rounded-lg overflow-hidden relative" style="min-height: 400px; max-height: 500px;">
-                    <!-- 背景网格效果 -->
-                    <div class="absolute inset-0 opacity-10" style="background-image: radial-gradient(circle, #fff 1px, transparent 1px); background-size: 20px 20px;"></div>
-                    
-                    <!-- 主标题 -->
-                    <div class="text-center mb-4 relative z-10">
-                        <div class="flex items-center justify-center space-x-3 mb-2">
-                            <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg">
-                                <i class="fas fa-brain text-white"></i>
-                            </div>
-                            <h3 class="text-xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">LinguaVision AI Engine</h3>
-                        </div>
-                        <p class="text-gray-400 text-sm">正在处理您的场景描述 · ${currentModel}</p>
-                    </div>
-                    
-                    <!-- 处理步骤容器 -->
-                    <div class="relative z-10 flex-1" id="processing-steps" style="min-height: 280px;">
-                        <!-- 步骤将通过JavaScript动态添加 -->
-                    </div>
-                    
-                    <!-- 底部统计信息 -->
-                    <div class="absolute bottom-4 left-6 right-6 flex justify-between text-xs text-gray-500 border-t border-gray-700 pt-3">
-                        <span class="flex items-center space-x-2">
-                            <i class="fas fa-robot"></i>
-                            <span>Model: ${currentModel}</span>
-                        </span>
-                        <span class="flex items-center space-x-2">
-                            <i class="fas fa-clock"></i>
-                            <span id="processing-time">00:00</span>
-                        </span>
-                        <span class="flex items-center space-x-2">
-                            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                            <span>Processing</span>
-                        </span>
-                    </div>
-                </div>
-            `;
-
-            // 启动技术性处理过程
-            startTechnicalProcessing();
-        }
-
-        // 技术性处理过程
-        function startTechnicalProcessing() {
-            const steps = [
-                {
-                    id: 'nlp',
-                    title: 'NLP 语义解析',
-                    description: '正在解析您的自然语言输入...',
-                    details: ['词法分析完成', '句法结构识别', '语义关系提取', '场景要素识别'],
-                    icon: 'fas fa-language',
-                    color: 'from-blue-500 to-cyan-500',
-                    duration: 3000
-                },
-                {
-                    id: 'asset',
-                    title: '资产系统匹配',
-                    description: '正在匹配最合适的3D资产内容...',
-                    details: ['检索资产库', '模型兼容性验证', '纹理质量评估', '物理属性配置'],
-                    icon: 'fas fa-cube',
-                    color: 'from-green-500 to-teal-500',
-                    duration: 4000
-                },
-                {
-                    id: 'spatial',
-                    title: '空间关系解析',
-                    description: '正在处理对象间的空间关系...',
-                    details: ['构建空间拓扑图', '计算相对位置', '碰撞检测设置', '约束关系建立'],
-                    icon: 'fas fa-project-diagram',
-                    color: 'from-purple-500 to-pink-500',
-                    duration: 3500
-                },
-                {
-                    id: 'timeline',
-                    title: '时间轴构建',
-                    description: '正在生成动态事件序列...',
-                    details: ['主动事件识别', '被动事件推导', '时序依赖分析', '物理参数计算'],
-                    icon: 'fas fa-clock',
-                    color: 'from-orange-500 to-red-500',
-                    duration: 2500
-                },
-                {
-                    id: 'compile',
-                    title: '代码编译生成',
-                    description: '正在输出UE5标准代码...',
-                    details: ['生成头文件(.h)', '编译源代码(.cpp)', '蓝图接口创建', '资产引用配置'],
-                    icon: 'fas fa-code',
-                    color: 'from-indigo-500 to-purple-500',
-                    duration: 3000
-                }
-            ];
-
-            let currentStepIndex = 0;
-            let startTime = Date.now();
-
-            // 更新处理时间
-            const timeInterval = setInterval(() => {
-                const elapsed = Math.floor((Date.now() - startTime) / 1000);
-                const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
-                const seconds = (elapsed % 60).toString().padStart(2, '0');
-                const timeElement = document.getElementById('processing-time');
-                if (timeElement) {
-                    timeElement.textContent = `${minutes}:${seconds}`;
-                }
-            }, 1000);
-
-            function processNextStep() {
-                if (currentStepIndex >= steps.length) {
-                    clearInterval(timeInterval);
-                    setTimeout(showTechnicalResult, 1000);
-                    return;
-                }
-
-                const step = steps[currentStepIndex];
-                addProcessingStep(step, currentStepIndex);
-                
-                setTimeout(() => {
-                    completeStep(step.id);
-                    currentStepIndex++;
-                    setTimeout(processNextStep, 500);
-                }, step.duration);
-            }
-
-            processNextStep();
-        }
-
-        function addProcessingStep(step, index) {
-            const stepsContainer = document.getElementById('processing-steps');
-            
-            // 清空之前的步骤内容
-            stepsContainer.innerHTML = '';
-            
-            const stepElement = document.createElement('div');
-            stepElement.id = `step-${step.id}`;
-            stepElement.className = 'opacity-0 transform translate-y-4';
-            
-            stepElement.innerHTML = `
-                <div class="bg-gray-800 rounded-xl p-6 border border-gray-700 shadow-xl">
-                    <!-- 步骤头部 -->
-                    <div class="flex items-center justify-between mb-6">
-                        <div class="flex items-center space-x-4">
-                            <div class="w-12 h-12 bg-gradient-to-r ${step.color} rounded-xl flex items-center justify-center shadow-lg">
-                                <i class="${step.icon} text-white text-lg"></i>
-                            </div>
-                            <div>
-                                <h4 class="font-bold text-white text-lg">${step.title}</h4>
-                                <p class="text-gray-400 text-sm">${step.description}</p>
-                            </div>
-                        </div>
-                        <div class="flex items-center space-x-3">
-                            <div class="w-6 h-6 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" id="spinner-${step.id}"></div>
-                            <i class="fas fa-check-circle text-green-400 text-xl hidden" id="check-${step.id}"></i>
-                        </div>
-                    </div>
-                    
-                    <!-- 整体进度条 -->
-                    <div class="mb-6">
-                        <div class="flex justify-between text-xs text-gray-400 mb-2">
-                            <span>处理进度</span>
-                            <span id="step-progress-text-${step.id}">0%</span>
-                        </div>
-                        <div class="bg-gray-700 rounded-full h-2">
-                            <div class="bg-gradient-to-r ${step.color} h-2 rounded-full transition-all duration-500" 
-                                 style="width: 0%" id="progress-${step.id}"></div>
-                        </div>
-                    </div>
-                    
-                    <!-- 技术细节网格 -->
-                    <div class="grid grid-cols-2 gap-3" id="details-${step.id}">
-                        ${step.details.map((detail, i) => `
-                            <div class="bg-gray-900/50 rounded-lg p-3 border border-gray-600 opacity-0 transform translate-x-4" id="detail-${step.id}-${i}">
-                                <div class="flex items-center space-x-2">
-                                    <div class="w-2 h-2 bg-gradient-to-r ${step.color} rounded-full opacity-50" id="detail-dot-${step.id}-${i}"></div>
-                                    <span class="text-xs text-gray-300 flex-1">${detail}</span>
-                                    <i class="fas fa-check text-green-400 text-xs hidden" id="detail-check-${step.id}-${i}"></i>
-                                </div>
-                            </div>
-                        `).join('')}
-                    </div>
-                    
-                    <!-- 技术信息 -->
-                    <div class="mt-6 bg-gray-900/30 rounded-lg p-4 border border-gray-600">
-                        <div class="flex items-center justify-between text-xs text-gray-500">
-                            <span>引擎: ${step.id.toUpperCase()}</span>
-                            <span>模型: ${currentModel}</span>
-                            <span id="step-timer-${step.id}">00:00</span>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            stepsContainer.appendChild(stepElement);
-            
-            // 添加平滑的进入动画
-            setTimeout(() => {
-                stepElement.style.opacity = '1';
-                stepElement.style.transform = 'translateY(0)';
-                stepElement.style.transition = 'all 0.6s cubic-bezier(0.4, 0, 0.2, 1)';
-                
-                // 开始显示技术细节和计时器
-                animateStepDetails(step);
-                startStepTimer(step.id);
-            }, 200);
-        }
-
-        function startStepTimer(stepId) {
-            let seconds = 0;
-            const timer = setInterval(() => {
-                seconds++;
-                const minutes = Math.floor(seconds / 60).toString().padStart(2, '0');
-                const secs = (seconds % 60).toString().padStart(2, '0');
-                const timerElement = document.getElementById(`step-timer-${stepId}`);
-                if (timerElement) {
-                    timerElement.textContent = `${minutes}:${secs}`;
-                } else {
-                    clearInterval(timer);
-                }
-            }, 1000);
-            
-            // 存储定时器ID以便清理
-            window[`stepTimer_${stepId}`] = timer;
-        }
-
-        function animateStepDetails(step) {
-            let detailIndex = 0;
-            const showDetailInterval = setInterval(() => {
-                const detailElement = document.getElementById(`detail-${step.id}-${detailIndex}`);
-                const dotElement = document.getElementById(`detail-dot-${step.id}-${detailIndex}`);
-                
-                if (detailElement) {
-                    // 显示细节卡片
-                    detailElement.style.opacity = '1';
-                    detailElement.style.transform = 'translateX(0)';
-                    detailElement.style.transition = 'all 0.4s cubic-bezier(0.4, 0, 0.2, 1)';
-                    
-                    // 激活状态指示点
-                    if (dotElement) {
-                        dotElement.style.opacity = '1';
-                        dotElement.style.transform = 'scale(1.2)';
-                        dotElement.style.transition = 'all 0.3s ease';
-                    }
-                    
-                    // 1.5秒后显示完成标记
-                    setTimeout(() => {
-                        const checkElement = document.getElementById(`detail-check-${step.id}-${detailIndex}`);
-                        if (checkElement) {
-                            checkElement.classList.remove('hidden');
-                            // 重置指示点大小
-                            if (dotElement) {
-                                dotElement.style.transform = 'scale(1)';
-                            }
-                        }
-                    }, 1500);
-                }
-                
-                detailIndex++;
-                if (detailIndex >= step.details.length) {
-                    clearInterval(showDetailInterval);
-                }
-                
-                // 更新整体进度条和百分比
-                const progress = (detailIndex / step.details.length) * 100;
-                const progressBar = document.getElementById(`progress-${step.id}`);
-                const progressText = document.getElementById(`step-progress-text-${step.id}`);
-                
-                if (progressBar) {
-                    progressBar.style.width = `${progress}%`;
-                }
-                if (progressText) {
-                    progressText.textContent = `${Math.round(progress)}%`;
-                }
-            }, 800);
-        }
-
-        function completeStep(stepId) {
-            const spinner = document.getElementById(`spinner-${stepId}`);
-            const check = document.getElementById(`check-${stepId}`);
-            const progressBar = document.getElementById(`progress-${stepId}`);
-            const progressText = document.getElementById(`step-progress-text-${stepId}`);
-            
-            // 清理该步骤的定时器
-            if (window[`stepTimer_${stepId}`]) {
-                clearInterval(window[`stepTimer_${stepId}`]);
-                delete window[`stepTimer_${stepId}`];
-            }
-            
-            if (spinner) {
-                spinner.style.display = 'none';
-            }
-            if (check) {
-                check.classList.remove('hidden');
-                // 添加完成动画
-                check.style.transform = 'scale(0)';
-                setTimeout(() => {
-                    check.style.transform = 'scale(1)';
-                    check.style.transition = 'transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)';
-                }, 100);
-            }
-            if (progressBar) {
-                progressBar.style.width = '100%';
-            }
-            if (progressText) {
-                progressText.textContent = '100%';
-            }
-        }
-
-        function showTechnicalResult() {
-            const preview = document.getElementById('scene-preview');
-            
-            preview.innerHTML = `
-                <div class="h-full bg-gray-900 text-white p-6 rounded-lg overflow-hidden relative flex flex-col" style="min-height: 400px; max-height: 500px;">
-                    <!-- 成功标题 -->
-                    <div class="text-center mb-4">
-                        <div class="flex items-center justify-center space-x-3 mb-3">
-                            <div class="w-12 h-12 bg-gradient-to-br from-green-500 to-emerald-600 rounded-xl flex items-center justify-center shadow-lg">
-                                <i class="fas fa-check text-white text-xl"></i>
-                            </div>
-                            <div>
-                                <h3 class="text-xl font-bold bg-gradient-to-r from-green-400 to-emerald-400 bg-clip-text text-transparent">场景生成完成</h3>
-                                <p class="text-gray-400 text-sm">所有系统处理成功</p>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 可滚动内容区域 -->
-                    <div class="flex-1 overflow-y-auto pr-2" style="max-height: 280px;">
-                        <!-- 生成结果统计 -->
-                        <div class="grid grid-cols-3 gap-3 mb-4">
-                            <div class="bg-gray-800 rounded-lg p-2.5 text-center border border-gray-700">
-                                <div class="text-lg font-bold text-blue-400">23</div>
-                                <div class="text-xs text-gray-500">3D对象</div>
-                            </div>
-                            <div class="bg-gray-800 rounded-lg p-2.5 text-center border border-gray-700">
-                                <div class="text-lg font-bold text-green-400">12</div>
-                                <div class="text-xs text-gray-500">动态事件</div>
-                            </div>
-                            <div class="bg-gray-800 rounded-lg p-2.5 text-center border border-gray-700">
-                                <div class="text-lg font-bold text-purple-400">8</div>
-                                <div class="text-xs text-gray-500">时间轴</div>
-                            </div>
-                        </div>
-                        
-                        <!-- 生成的文件 -->
-                        <div class="space-y-3 mb-4">
-                            <h4 class="text-sm font-semibold text-gray-300 mb-2">
-                                <i class="fas fa-file-code mr-2"></i>
-                                生成的UE5代码文件
-                            </h4>
-                            
-                            <!-- Header文件 -->
-                            <div class="bg-gray-800 rounded-lg border border-gray-700 p-3">
-                                <div class="flex items-center justify-between mb-1">
-                                    <div class="flex items-center space-x-2">
-                                        <i class="fas fa-file-code text-blue-400"></i>
-                                        <span class="font-mono text-sm text-gray-300">SceneGenerator.h</span>
-                                        <span class="px-2 py-1 bg-blue-900 text-blue-200 text-xs rounded">头文件</span>
-                                    </div>
-                                    <span class="text-xs text-gray-500">2.4 KB</span>
-                                </div>
-                                <p class="text-xs text-gray-500">包含类定义、函数声明和对象属性定义</p>
-                            </div>
-                            
-                            <!-- CPP文件 -->
-                            <div class="bg-gray-800 rounded-lg border border-gray-700 p-3">
-                                <div class="flex items-center justify-between mb-1">
-                                    <div class="flex items-center space-x-2">
-                                        <i class="fas fa-file-code text-green-400"></i>
-                                        <span class="font-mono text-sm text-gray-300">SceneGenerator.cpp</span>
-                                        <span class="px-2 py-1 bg-green-900 text-green-200 text-xs rounded">源代码</span>
-                                    </div>
-                                    <span class="text-xs text-gray-500">15.7 KB</span>
-                                </div>
-                                <p class="text-xs text-gray-500">包含完整的场景逻辑、物理计算和事件处理</p>
-                            </div>
-                        </div>
-                        
-                        <!-- 使用说明 -->
-                        <div class="bg-yellow-900/30 border border-yellow-700 rounded-lg p-3 mb-4">
-                            <div class="flex items-start space-x-2">
-                                <i class="fas fa-info-circle text-yellow-400 mt-0.5 flex-shrink-0"></i>
-                                <div class="text-xs">
-                                    <p class="text-yellow-200 font-medium mb-1">使用说明</p>
-                                    <p class="text-yellow-300/80">请将生成的 .h 和 .cpp 文件导入您的UE5项目中。由于系统限制，暂不支持实时预览，需要在UE5编辑器中编译和运行场景。</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 固定底部操作按钮 -->
-                    <div class="border-t border-gray-700 pt-4 mt-4">
-                        <div class="flex space-x-3">
-                            <button class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg">
-                                <i class="fas fa-download mr-2"></i>
-                                下载文件
-                            </button>
-                            <button class="flex-1 bg-gray-700 text-gray-300 px-4 py-2.5 rounded-lg text-sm font-medium hover:bg-gray-600 transition-all">
-                                <i class="fas fa-eye mr-2"></i>
-                                预览代码
-                            </button>
-                            <button class="px-4 py-2.5 bg-gray-800 text-gray-400 rounded-lg hover:bg-gray-700 transition-all">
-                                <i class="fas fa-redo"></i>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }
-
-        // 为了向后兼容，保留原函数名
-        function showResult() {
-            showTechnicalResult();
-        }
-
-        // 接收来自父页面的模板数据
+        // 接收来自模板页面的消息
         window.addEventListener('message', function(event) {
             if (event.data.action === 'loadTemplate') {
                 const sceneInput = document.getElementById('scene-input');
                 if (sceneInput) {
-                    // 清空之前的内容
                     sceneInput.value = '';
                     
-                    // 添加打字机效果
                     const templateContent = event.data.templateContent;
                     let index = 0;
                     
@@ -862,28 +829,11 @@
                         if (index < templateContent.length) {
                             sceneInput.value += templateContent.charAt(index);
                             index++;
-                            setTimeout(typeWriter, 20); // 调整打字速度
+                            setTimeout(typeWriter, 20);
                         } else {
-                            // 打字完成后，添加一个闪烁效果
                             sceneInput.style.borderColor = '#6366f1';
                             sceneInput.focus();
-                            
-                            // 显示成功提示
-                            setTimeout(() => {
-                                const notification = document.createElement('div');
-                                notification.innerHTML = `
-                                    <div style="position: fixed; top: 20px; right: 20px; z-index: 1000; background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; padding: 12px 20px; border-radius: 8px; box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3); animation: slideIn 0.3s ease;">
-                                        <i class="fas fa-check-circle mr-2"></i>
-                                        模板已加载完成！
-                                    </div>
-                                `;
-                                document.body.appendChild(notification);
-                                
-                                // 3秒后自动移除通知
-                                setTimeout(() => {
-                                    notification.remove();
-                                }, 3000);
-                            }, 500);
+                            showNotification('模板已加载完成！', 'success');
                         }
                     }
                     
@@ -892,8 +842,9 @@
             }
         });
 
-        // 页面加载动画
-        window.addEventListener('load', function() {
+        // 初始化UI
+        function initializeUI() {
+            // 页面加载动画
             const cards = document.querySelectorAll('.card-hover');
             cards.forEach((card, index) => {
                 setTimeout(() => {
@@ -907,7 +858,7 @@
                     }, 100);
                 }, index * 100);
             });
-        });
+        }
     </script>
 </body>
 </html>
