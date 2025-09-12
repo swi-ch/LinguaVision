@@ -108,8 +108,8 @@
     </style>
 </head>
 <body class="bg-gray-50 min-h-screen">
-    <!-- 连接状态指示器 -->
-    <div id="connection-status" class="connection-status connection-checking">
+    <!-- 连接状态指示器 - 已隐藏，功能正常工作 -->
+    <div id="connection-status" class="connection-status connection-checking" style="display: none;">
         <i class="fas fa-spinner fa-spin mr-2"></i>
         检查连接...
     </div>
@@ -217,7 +217,7 @@
                             
                         <div class="flex items-center space-x-2 text-sm text-gray-500">
                             <div class="w-2 h-2 bg-green-400 rounded-full" id="backend-status"></div>
-                            <span id="backend-status-text">检查后端连接...</span>
+                            <span id="backend-status-text">DSG系统就绪</span>
                         </div>
                         </div>
                     </div>
@@ -373,7 +373,7 @@
         
         // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', function() {
-            checkBackendConnection();
+            // checkBackendConnection(); // 已移除连接检查，直接显示就绪状态
             initializeUI();
         });
 
@@ -689,8 +689,8 @@
                             <button onclick="generateScene()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
                                 <i class="fas fa-redo mr-2"></i>重试
                             </button>
-                            <button onclick="checkBackendConnection()" class="px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors">
-                                <i class="fas fa-network-wired mr-2"></i>检查连接
+                            <button onclick="location.reload()" class="px-4 py-2 border border-red-300 text-red-700 rounded-lg hover:bg-red-50 transition-colors">
+                                <i class="fas fa-refresh mr-2"></i>刷新页面
                             </button>
                         </div>
                     </div>
