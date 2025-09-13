@@ -370,6 +370,7 @@
         let currentModel = 'ERNIE-4.5-21B-A3B';
         let currentModelColor = 'blue';
         let isGenerating = false;
+        let lastGeneratedFiles = []; // 缓存最后生成的文件列表
         
         // 页面加载时初始化
         document.addEventListener('DOMContentLoaded', function() {
@@ -457,7 +458,10 @@
                 });
 
                 if (response.success) {
-                    // 生成成功
+                    // 生成成功，缓存文件列表
+                    lastGeneratedFiles = response.data.files || [];
+                    console.log('缓存文件列表:', lastGeneratedFiles);
+                    
                     showGenerationResult(response.data);
                     showNotification(`场景生成成功！使用模型: ${currentModel}`, 'success');
                     
@@ -641,7 +645,7 @@
                                     <i class="fas fa-file-code mr-2"></i>
                                     生成的文件 (${data.files.length})
                                 </h4>
-                                <button onclick="downloadAllFiles(${JSON.stringify(data.files).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg transition-colors">
+                                <button onclick="downloadCurrentFiles()" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg transition-colors">
                                     <i class="fas fa-download mr-1"></i>
                                     下载全部
                                 </button>
@@ -689,7 +693,7 @@
                     <div class="border-t border-gray-700 pt-4 mt-4">
                         <div class="flex space-x-3">
                             ${data.files && data.files.length > 0 ? `
-                            <button onclick="downloadAllFiles()" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg">
+                            <button onclick="downloadCurrentFiles()" class="flex-1 bg-gradient-to-r from-blue-600 to-blue-700 text-white px-4 py-2.5 rounded-lg text-sm font-medium hover:from-blue-700 hover:to-blue-800 transition-all shadow-lg">
                                 <i class="fas fa-download mr-2"></i>
                                 下载所有文件
                             </button>
@@ -735,22 +739,84 @@
         // 文件下载功能
         async function downloadFile(filename) {
             try {
-                const response = await fetch(window.LinguaVisionConfig.getEndpoint(`/api/download/${filename}`));
-                if (!response.ok) throw new Error('下载失败');
+                console.log(`开始下载文件: ${filename}`);
+                const downloadUrl = window.LinguaVisionConfig.getEndpoint(`/api/download/${filename}`);
+                console.log(`下载URL: ${downloadUrl}`);
+                
+                const response = await fetch(downloadUrl);
+                console.log(`下载响应状态: ${response.status}`);
+                
+                if (!response.ok) {
+                    throw new Error(`下载失败，状态码: ${response.status}`);
+                }
                 
                 const blob = await response.blob();
+                console.log(`文件大小: ${blob.size} bytes`);
+                
                 const url = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = url;
                 a.download = filename;
+                a.style.display = 'none';
                 document.body.appendChild(a);
                 a.click();
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
                 
-                showNotification(`${filename} 下载成功`, 'success');
+                // 延迟清理，确保下载开始
+                setTimeout(() => {
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(url);
+                }, 100);
+                
+                showNotification(`${filename} 下载成功`, 'success', 3000);
+                return true;
+                
             } catch (error) {
-                showNotification(`下载失败: ${error.message}`, 'error');
+                console.error(`下载文件 ${filename} 失败:`, error);
+                showNotification(`下载失败: ${error.message}`, 'error', 5000);
+                return false;
+            }
+        }
+
+        // 下载当前生成的文件
+        async function downloadCurrentFiles() {
+            try {
+                console.log('开始下载当前文件，缓存文件数量:', lastGeneratedFiles.length);
+                
+                if (!lastGeneratedFiles || lastGeneratedFiles.length === 0) {
+                    showNotification('没有可下载的文件，请先生成场景', 'warning');
+                    return;
+                }
+                
+                showNotification(`开始下载 ${lastGeneratedFiles.length} 个文件...`, 'info');
+                let successCount = 0;
+                
+                for (let i = 0; i < lastGeneratedFiles.length; i++) {
+                    const file = lastGeneratedFiles[i];
+                    console.log(`下载第 ${i + 1} 个文件: ${file.name}`);
+                    
+                    const success = await downloadFile(file.name);
+                    if (success) successCount++;
+                    
+                    // 显示下载进度
+                    if (lastGeneratedFiles.length > 1) {
+                        showNotification(`下载进度: ${i + 1}/${lastGeneratedFiles.length}`, 'info', 1000);
+                    }
+                    
+                    // 添加延迟避免浏览器阻止多个下载
+                    if (i < lastGeneratedFiles.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
+                }
+                
+                if (successCount === lastGeneratedFiles.length) {
+                    showNotification(`所有文件下载完成！(${successCount}个)`, 'success');
+                } else {
+                    showNotification(`部分文件下载完成 (${successCount}/${lastGeneratedFiles.length})`, 'warning');
+                }
+                
+            } catch (error) {
+                console.error('批量下载失败:', error);
+                showNotification(`批量下载失败: ${error.message}`, 'error');
             }
         }
 
