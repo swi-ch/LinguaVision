@@ -438,16 +438,28 @@
                 // 显示技术性加载过程
                 showTechnicalProcessing();
                 
+                // 获取当前选择的模型
+                const modelMap = {
+                    'ERNIE-4.5-21B-A3B': 'ernie',
+                    'GPT-4.1': 'gpt'
+                };
+                const selectedModel = modelMap[currentModel] || 'ernie';
+                
+                console.log(`生成场景: ${input}, 使用模型: ${currentModel} (${selectedModel})`);
+                
                 // 调用后端API
                 const response = await window.callLinguaVisionAPI('/api/generate-scene', {
                     method: 'POST',
-                    body: JSON.stringify({ description: input })
+                    body: JSON.stringify({ 
+                        description: input,
+                        model: selectedModel
+                    })
                 });
 
                 if (response.success) {
                     // 生成成功
                     showGenerationResult(response.data);
-                    showNotification('场景生成成功！', 'success');
+                    showNotification(`场景生成成功！使用模型: ${currentModel}`, 'success');
                     
                     // 更新统计数据
                     updateStats();
