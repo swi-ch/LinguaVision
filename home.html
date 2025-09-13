@@ -464,13 +464,28 @@
                     // 更新统计数据
                     updateStats();
                 } else {
-                    // 生成失败
-                    throw new Error(response.error || '场景生成失败');
+                    // 生成失败 - 静默处理，只在控制台记录
+                    console.error('DSG系统返回错误:', response.error);
+                    showError(`处理遇到问题，请检查后端日志。错误信息：${response.error || '未知错误'}`);
+                    showNotification('处理遇到问题，详细信息请查看后端日志', 'warning', 5000);
                 }
             } catch (error) {
-                console.error('场景生成错误:', error);
-                showError(`生成失败: ${error.message}`);
-                showNotification(`生成失败: ${error.message}`, 'error');
+                console.error('场景生成请求失败:', error);
+                
+                // 静默处理超时和网络错误
+                if (error.message.includes('超时') || error.message.includes('timeout') || error.message.includes('请求超时')) {
+                    console.log('请求超时，但后端可能仍在处理中...');
+                    showError('处理时间较长，后端仍在运行中。您可以稍后刷新页面查看结果，或重新提交');
+                    showNotification('处理时间较长，后端仍在运行，请耐心等待', 'info', 8000);
+                } else if (error.message.includes('网络') || error.message.includes('连接') || error.message.includes('NetworkError')) {
+                    console.log('网络连接问题:', error.message);
+                    showError('网络连接问题，请检查网络状态后重试');
+                    showNotification('网络连接异常，请重试', 'warning', 5000);
+                } else {
+                    console.log('其他处理问题:', error.message);
+                    showError('处理请求时遇到问题，详细信息请查看后端日志');
+                    showNotification('请求处理异常，详情查看后端日志', 'warning', 5000);
+                }
             } finally {
                 setGeneratingState(false);
             }
@@ -558,7 +573,7 @@
                         <div class="text-center">
                             <div class="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
                             <p class="text-lg font-medium mb-2">正在处理您的场景描述...</p>
-                            <p class="text-gray-400 text-sm">这可能需要30秒到2分钟</p>
+                            <p class="text-gray-400 text-sm">处理时间：100秒到300秒，请耐心等待</p>
                         </div>
                     </div>
                     
@@ -621,10 +636,16 @@
                         <!-- 生成的文件列表 -->
                         ${data.files && data.files.length > 0 ? `
                         <div class="space-y-3 mb-4">
-                            <h4 class="text-sm font-semibold text-gray-300 mb-2">
-                                <i class="fas fa-file-code mr-2"></i>
-                                生成的文件 (${data.files.length})
-                            </h4>
+                            <div class="flex items-center justify-between mb-3">
+                                <h4 class="text-sm font-semibold text-gray-300">
+                                    <i class="fas fa-file-code mr-2"></i>
+                                    生成的文件 (${data.files.length})
+                                </h4>
+                                <button onclick="downloadAllFiles(${JSON.stringify(data.files).replace(/"/g, '&quot;')})" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded-lg transition-colors">
+                                    <i class="fas fa-download mr-1"></i>
+                                    下载全部
+                                </button>
+                            </div>
                             
                             ${data.files.map(file => `
                             <div class="bg-gray-800 rounded-lg border border-gray-700 p-3">
@@ -637,13 +658,14 @@
                                         </span>
                                     </div>
                                     <div class="flex items-center space-x-2">
-                                        <span class="text-xs text-gray-500">${(file.size / 1024).toFixed(1)} KB</span>
-                                        <button onclick="downloadFile('${file.name}')" class="text-blue-400 hover:text-blue-300 text-xs">
-                                            <i class="fas fa-download"></i>
+                                        <span class="text-xs text-gray-500">${file.sizeFormatted || ((file.size / 1024).toFixed(1) + ' KB')}</span>
+                                        <button onclick="downloadFile('${file.name}')" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 text-white text-xs rounded transition-colors">
+                                            <i class="fas fa-download mr-1"></i>
+                                            下载
                                         </button>
                                     </div>
                                 </div>
-                                ${file.preview ? `<p class="text-xs text-gray-500 truncate">${file.preview}</p>` : ''}
+                                ${file.preview ? `<p class="text-xs text-gray-500 truncate">${file.preview.substring(0, 80)}...</p>` : ''}
                             </div>
                             `).join('')}
                         </div>
@@ -695,7 +717,7 @@
                         <div class="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
                             <i class="fas fa-exclamation-triangle text-red-500 text-2xl"></i>
                         </div>
-                        <h3 class="text-lg font-semibold text-red-800 mb-2">生成失败</h3>
+                        <h3 class="text-lg font-semibold text-red-800 mb-2">处理异常</h3>
                         <p class="text-red-600 mb-4">${errorMessage}</p>
                         <div class="space-x-3">
                             <button onclick="generateScene()" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
@@ -732,20 +754,43 @@
             }
         }
 
-        // 下载所有文件
-        async function downloadAllFiles() {
+        // 下载所有文件（支持传入文件列表）
+        async function downloadAllFiles(files = null) {
             try {
-                const response = await window.callLinguaVisionAPI('/api/files');
-                if (response.success && response.files.length > 0) {
-                    for (const file of response.files) {
-                        await downloadFile(file.name);
-                        // 添加小延迟避免同时下载太多文件
-                        await new Promise(resolve => setTimeout(resolve, 500));
+                let filesToDownload = files;
+                
+                // 如果没有传入文件列表，从API获取
+                if (!filesToDownload) {
+                    const response = await window.callLinguaVisionAPI('/api/files');
+                    if (response.success && response.files.length > 0) {
+                        filesToDownload = response.files;
+                    } else {
+                        showNotification('没有可下载的文件', 'warning');
+                        return;
                     }
-                } else {
-                    showNotification('没有可下载的文件', 'warning');
                 }
+                
+                showNotification(`开始下载 ${filesToDownload.length} 个文件...`, 'info');
+                
+                for (let i = 0; i < filesToDownload.length; i++) {
+                    const file = filesToDownload[i];
+                    await downloadFile(file.name);
+                    
+                    // 显示下载进度
+                    if (filesToDownload.length > 1) {
+                        showNotification(`下载进度: ${i + 1}/${filesToDownload.length}`, 'info', 1000);
+                    }
+                    
+                    // 添加小延迟避免同时下载太多文件
+                    if (i < filesToDownload.length - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                    }
+                }
+                
+                showNotification(`所有文件下载完成！(${filesToDownload.length}个)`, 'success');
+                
             } catch (error) {
+                console.error('批量下载失败:', error);
                 showNotification(`批量下载失败: ${error.message}`, 'error');
             }
         }

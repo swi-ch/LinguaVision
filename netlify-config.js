@@ -7,12 +7,12 @@ window.LinguaVisionConfig = {
         // 本地开发环境
         development: {
             baseUrl: 'http://localhost:3000',
-            timeout: 120000 // 2分钟超时
+            timeout: 300000 // 5分钟超时
         },
         // 生产环境 - 需要替换为您的公网IP
         production: {
             baseUrl: 'https://5b233595f974.ngrok-free.app', // ngrok实际地址
-            timeout: 120000
+            timeout: 300000 // 5分钟超时
         }
     },
     
