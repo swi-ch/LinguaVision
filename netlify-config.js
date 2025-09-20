@@ -11,7 +11,7 @@ window.LinguaVisionConfig = {
         },
         // 生产环境 - 需要替换为您的公网IP
         production: {
-            baseUrl: 'https://a80b237cedaf.ngrok-free.app', // ngrok实际地址
+            baseUrl: 'https://8b6d5e200ebe.ngrok-free.app', // ngrok实际地址
             timeout: 300000 // 5分钟超时
         }
     },
