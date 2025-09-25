@@ -11,7 +11,7 @@ window.LinguaVisionConfig = {
         },
         // 生产环境 - 需要替换为您的公网IP
         production: {
-            baseUrl: 'https://1cd319b97b51.ngrok-free.app', // ngrok实际地址
+            baseUrl: 'https://d6a16b71cd50.ngrok-free.app', // ngrok实际地址
             timeout: 300000 // 5分钟超时
         }
     },
@@ -19,7 +19,7 @@ window.LinguaVisionConfig = {
     // 预览配置 - 在线预览目标URL
     preview: {
         // 预览目标URL - 用户获得预览权限后跳转的地址
-        targetUrl: 'http://10.192.117.121:80'
+        targetUrl: 'http://10.192.0.34:80'
     },
     
     // 功能开关
