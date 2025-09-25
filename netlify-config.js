@@ -16,6 +16,12 @@ window.LinguaVisionConfig = {
         }
     },
     
+    // 预览配置 - 在线预览目标URL
+    preview: {
+        // 预览目标URL - 用户获得预览权限后跳转的地址
+        targetUrl: 'http://10.192.117.121:80'
+    },
+    
     // 功能开关
     features: {
         realtimeProgress: true,
@@ -45,6 +51,11 @@ window.LinguaVisionConfig = {
     // 获取完整的API端点URL
     getEndpoint(path) {
         return this.getApiUrl() + (path.startsWith('/') ? path : '/' + path);
+    },
+    
+    // 获取预览目标URL
+    getPreviewUrl() {
+        return this.preview.targetUrl;
     }
 };
 
